@@ -2182,7 +2182,7 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Secondary Market Listings</h2>
              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -2711,7 +2711,7 @@ const CurrencyExchange = () => {
     };
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+        <div className="bg-white p-8 rounded-lg shadow-md max-w-xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Exchange NGN & Crypto</h2>
             <div className="space-y-2">
                 {/* From Field */}
@@ -4575,6 +4575,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
