@@ -3365,88 +3365,90 @@ const DeveloperCreateProject = () => {
 
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">Submit New Project</h2>
-            <p className="text-sm text-gray-500 mb-8">Complete the form below to submit your project for review and funding.</p>
-             <form className="space-y-10">
-                {/* Section 1: Project Information */}
-                <fieldset className="border p-6 rounded-lg space-y-6">
-                    <legend className="text-lg font-semibold text-gray-800 px-2 -ml-2">Project Information</legend>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Project Title</label>
-                            <input type="text" name="projectTitle" value={formData.projectTitle} onChange={handleInputChange} placeholder="e.g., Victoria Island Luxury Apartments" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Location</label>
-                            <input type="text" name="location" value={formData.location} onChange={handleInputChange} placeholder="e.g., Victoria Island, Lagos" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                    </div>
-                    <div>
-                         <label className="block text-sm font-medium text-gray-700">Description</label>
-                         <textarea name="description" value={formData.description} onChange={handleInputChange} rows="4" placeholder="e.g., A stunning collection of 2 and 3-bedroom apartments with waterfront views..." className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
-                         <div className="mt-2 flex justify-end">
-                            <button
-                                type="button"
-                                onClick={handleGenerateDescription}
-                                disabled={isGenerating}
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
-                            >
-                                <SparklesIcon className="w-4 h-4 mr-2" />
-                                {isGenerating ? 'Generating...' : '✨ Generate with AI'}
-                            </button>
-                         </div>
-                         {generationError && <p className="text-red-500 text-xs mt-1">{generationError}</p>}
-                    </div>
-
-                    <FileUploadComponent label="Property Pictures" description="Upload images that will be displayed on the properties tab after approval." />
-                </fieldset>
-
-                {/* Section 2: Financials & Tokenomics */}
-                <fieldset className="border p-6 rounded-lg space-y-6">
-                    <legend className="text-lg font-semibold text-gray-800 px-2 -ml-2">Financials & Tokenomics</legend>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Funding Goal (USD)</label>
-                            <input type="text" name="fundingGoal" value={formData.fundingGoal} onChange={handleInputChange} placeholder="e.g., 500,000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Project Annual APY (%)</label>
-                            <input type="number" name="apy" value={formData.apy} onChange={handleInputChange} step="0.1" placeholder="e.g., 17.5" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Term (Months)</label>
-                            <input type="number" name="term" value={formData.term} onChange={handleInputChange} placeholder="e.g., 36" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Total Token Supply</label>
-                            <input type="text" name="tokenSupply" value={formData.tokenSupply} onChange={handleInputChange} placeholder="e.g., 500,000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Token Ticker</label>
-                            <input type="text" name="tokenTicker" value={formData.tokenTicker} onChange={handleInputChange} placeholder="e.g., VLA" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Implied Price Per Token</label>
-                             <div className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm py-2 px-3">
-                                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(impliedPrice)}
+        <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">Submit New Project</h2>
+                <p className="text-sm text-gray-500 mb-8">Complete the form below to submit your project for review and funding.</p>
+                 <form className="space-y-10">
+                    {/* Section 1: Project Information */}
+                    <fieldset className="border p-6 rounded-lg space-y-6">
+                        <legend className="text-lg font-semibold text-gray-800 px-2 -ml-2">Project Information</legend>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Project Title</label>
+                                <input type="text" name="projectTitle" value={formData.projectTitle} onChange={handleInputChange} placeholder="e.g., Victoria Island Luxury Apartments" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700">Location</label>
+                                <input type="text" name="location" value={formData.location} onChange={handleInputChange} placeholder="e.g., Victoria Island, Lagos" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FileUploadComponent label="Project Proposal Document" description="Upload your detailed project proposal."/>
-                        <FileUploadComponent label="Other Legal Documents" description="e.g., permits, land titles, etc."/>
-                    </div>
-                </fieldset>
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700">Description</label>
+                             <textarea name="description" value={formData.description} onChange={handleInputChange} rows="4" placeholder="e.g., A stunning collection of 2 and 3-bedroom apartments with waterfront views..." className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"></textarea>
+                             <div className="mt-2 flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={handleGenerateDescription}
+                                    disabled={isGenerating}
+                                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300"
+                                >
+                                    <SparklesIcon className="w-4 h-4 mr-2" />
+                                    {isGenerating ? 'Generating...' : '✨ Generate with AI'}
+                                </button>
+                             </div>
+                             {generationError && <p className="text-red-500 text-xs mt-1">{generationError}</p>}
+                        </div>
 
-                 <div className="flex justify-end pt-4">
-                    <button type="button" className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md mr-3 hover:bg-gray-300">Cancel</button>
-                    <button type="submit" onClick={handleSubmitForReview} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Submit for Review</button>
-                </div>
-            </form>
+                        <FileUploadComponent label="Property Pictures" description="Upload images that will be displayed on the properties tab after approval." />
+                    </fieldset>
+
+                    {/* Section 2: Financials & Tokenomics */}
+                    <fieldset className="border p-6 rounded-lg space-y-6">
+                        <legend className="text-lg font-semibold text-gray-800 px-2 -ml-2">Financials & Tokenomics</legend>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Funding Goal (USD)</label>
+                                <input type="text" name="fundingGoal" value={formData.fundingGoal} onChange={handleInputChange} placeholder="e.g., 500,000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700">Project Annual APY (%)</label>
+                                <input type="number" name="apy" value={formData.apy} onChange={handleInputChange} step="0.1" placeholder="e.g., 17.5" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Term (Months)</label>
+                                <input type="number" name="term" value={formData.term} onChange={handleInputChange} placeholder="e.g., 36" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700">Total Token Supply</label>
+                                <input type="text" name="tokenSupply" value={formData.tokenSupply} onChange={handleInputChange} placeholder="e.g., 500,000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-700">Token Ticker</label>
+                                <input type="text" name="tokenTicker" value={formData.tokenTicker} onChange={handleInputChange} placeholder="e.g., VLA" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Implied Price Per Token</label>
+                                 <div className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm py-2 px-3">
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(impliedPrice)}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FileUploadComponent label="Project Proposal Document" description="Upload your detailed project proposal."/>
+                            <FileUploadComponent label="Other Legal Documents" description="e.g., permits, land titles, etc."/>
+                        </div>
+                    </fieldset>
+
+                     <div className="flex justify-end pt-4">
+                        <button type="button" className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md mr-3 hover:bg-gray-300">Cancel</button>
+                        <button type="submit" onClick={handleSubmitForReview} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Submit for Review</button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };
@@ -4569,6 +4571,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
