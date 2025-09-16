@@ -1851,7 +1851,7 @@ const InvestorWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">My Wallet</h2>
             <div className="mb-6 border-b border-gray-200">
                 <nav className="-mb-px flex space-x-6" aria-label="Tabs">
@@ -3133,7 +3133,7 @@ const DeveloperWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Operational Wallet</h2>
             <p className="text-sm text-gray-600 mb-6">This is your main wallet for funding project APY payments and managing company funds.</p>
             <div className="mb-6 border-b border-gray-200">
@@ -4571,6 +4571,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
