@@ -838,6 +838,10 @@ const RegisterPage = ({ setPage }) => {
                     <label className="block text-sm font-medium text-gray-700">Password</label>
                     <input type="password" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                </div>
                  <div>
                     <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Account</button>
                 </div>
@@ -1894,7 +1898,7 @@ const InvestorSettings = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('KYC');
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Settings</h2>
             <div className="mb-6 border-b border-gray-200">
                 <nav className="-mb-px flex space-x-6" aria-label="Tabs">
@@ -3159,7 +3163,7 @@ const DeveloperWallet = ({ currentUser }) => {
 
 const DeveloperSettings = ({ currentUser }) => {
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 max-w-4xl mx-auto">
             <CompanyProfileSettings profile={currentUser.companyProfile} />
             <TwoFactorAuthSettings enabled={currentUser.twoFactorEnabled} />
             <TreasuryAddressSettings address={currentUser.treasuryAddress} />
@@ -4571,6 +4575,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
