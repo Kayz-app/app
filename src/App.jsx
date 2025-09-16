@@ -4292,6 +4292,48 @@ export default function App() {
 
     const USD_NGN_RATE = 1500;
 
+    useEffect(() => {
+        // --- Favicon Logic ---
+        const svgString = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoGradientFavicon" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientFavicon)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientFavicon)" /></svg>`;
+        const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const pngUrl = canvas.toDataURL('image/png');
+
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = pngUrl;
+        };
+        img.src = dataUrl;
+
+        // --- Title Animation Logic ---
+        const originalTitle = document.title;
+        const titleText = "Powered by AI for Smarter Investing";
+        const fullTitle = titleText + ' .:. ';
+        let i = 0;
+        const titleInterval = setInterval(() => {
+            document.title = fullTitle.substring(i) + fullTitle.substring(0, i);
+            i = (i + 1) % fullTitle.length;
+        }, 300);
+
+        // --- Cleanup ---
+        return () => {
+            clearInterval(titleInterval);
+            document.title = originalTitle; // Restore original title on unmount
+        };
+    }, []);
+
     // Effect to handle invalid user type safely without causing render loops
     useEffect(() => {
         if (currentUser && !['investor', 'developer', 'admin'].includes(currentUser.type)) {
@@ -4527,6 +4569,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
