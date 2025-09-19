@@ -178,7 +178,8 @@ const callAIAPI = async (userPrompt, retries = 3, delay = 1000) => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`
+                "Authorization": `Bearer ${apiKey}`,
+                "OpenAI-Organization": process.env.OPENAI_ORG_ID
             },
             body: JSON.stringify({
                 model: "gpt-4.1-mini",
@@ -4237,8 +4238,8 @@ const Footer = ({ setPage, page }) => {
                     <div className="md:col-span-4 lg:col-span-2">
                         <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Solutions</h3>
                         <ul className="mt-4 space-y-4">
-                            <li><a href="#" className="text-base text-gray-400 hover:text-white">For Investors</a></li>
-                            <li><a href="#" className="text-base text-gray-400 hover:text-white">For Developers</a></li>
+                            <li><a href="#faq" onClick={(e) => { e.preventDefault(); handleScrollTo('faq'); }} className="text-base text-gray-400 hover:text-white">For Investors</a></li>
+                            <li><a href="#faq" onClick={(e) => { e.preventDefault(); handleScrollTo('faq'); }} className="text-base text-gray-400 hover:text-white">For Developers</a></li>
                         </ul>
                     </div>
                     <div className="md:col-span-4 lg:col-span-2">
@@ -4572,6 +4573,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
