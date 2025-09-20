@@ -1,4 +1,4 @@
-    // --- Blue Reverted Clone: app_clone_blue.jsx ---
+     // --- Blue Reverted Clone: app_clone_blue.jsx ---
 // Reverted color theme from emerald back to blue/indigo.
 // Generated automatically.
 
@@ -487,16 +487,16 @@ const Header = ({ page, currentUser, setPage, setCurrentUser }) => {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
                         <a href="#" onClick={() => setPage('landing')} className="flex-shrink-0 flex items-center gap-2">
-                           <KayzeraLogo className="h-10 w-auto"/>
+                           <KayzeraLogo className="h-12 w-auto"/>
                         </a>
                     </div>
                     <div className="hidden md:block">
                         <div className="ml-10 flex items-baseline space-x-4">
-                            <a href="#" onClick={() => setPage('landing')} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Home</a>
-                            <a href="#featured-projects" onClick={(e) => { e.preventDefault(); handleScrollTo('featured-projects'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Projects</a>
-                            <a href="#" onClick={() => setPage('company')} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">About Us</a>
-                            <a href="#faq" onClick={(e) => { e.preventDefault(); handleScrollTo('faq'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">FAQ</a>
-                            <a href="#compliance" onClick={(e) => { e.preventDefault(); handleScrollTo('compliance'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Compliance</a>
+                            <a href="#" onClick={() => setPage('landing')} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">Home</a>
+                            <a href="#featured-projects" onClick={(e) => { e.preventDefault(); handleScrollTo('featured-projects'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">Projects</a>
+                            <a href="#" onClick={() => setPage('company')} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">About Us</a>
+                            <a href="#faq" onClick={(e) => { e.preventDefault(); handleScrollTo('faq'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">FAQ</a>
+                            <a href="#compliance" onClick={(e) => { e.preventDefault(); handleScrollTo('compliance'); }} className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-base font-medium">Compliance</a>
                         </div>
                     </div>
                     <div className="flex items-center">
@@ -512,8 +512,8 @@ const Header = ({ page, currentUser, setPage, setCurrentUser }) => {
                             </div>
                         ) : (
                             <div className="hidden md:flex items-center space-x-2">
-                                <button onClick={() => setPage('login')} className="text-gray-600 hover:text-indigo-600 px-4 py-2 rounded-md text-sm font-medium">Log In</button>
-                                <button onClick={() => setPage('register')} className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition duration-150">Sign Up</button>
+                                <button onClick={() => setPage('login')} className="text-gray-600 hover:text-indigo-600 px-4 py-2 rounded-md text-base font-medium">Log In</button>
+                                <button onClick={() => setPage('register')} className="bg-indigo-600 text-white px-4 py-2 rounded-md text-base font-medium hover:bg-indigo-700 transition duration-150">Sign Up</button>
                             </div>
                         )}
                          <div className="md:hidden ml-2">
@@ -535,17 +535,17 @@ const LandingPage = ({ setPage, projects }) => {
                 {/* Hero Section */}
                 <section className="relative">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center py-20 md:py-28">
-                            {/* Left Column: Text Content */}
-                            <div className="text-center md:text-left">
+                        <div className="grid grid-cols-1 items-center py-20 md:py-28">
+                            {/* Text Content */}
+                            <div className="text-center max-w-3xl mx-auto">
                                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                                    <span className="block">Reimagine Nigerian Real Estate.</span>
-                                    <span className="block text-indigo-600">Stable Returns. Modern Access.</span>
+                                    <span className="block">Invest in Nigeria's Future.</span>
+                                    <span className="block text-indigo-600">Hedged in USD.</span>
                                 </h1>
-                                <p className="mt-6 max-w-lg mx-auto md:mx-0 text-lg md:text-xl text-gray-600">
-                                    Kayzera empowers you to own fractional shares in premium properties. Invest with confidence, earn stable returns, and hedge against inflation.
+                                <p className="mt-6 text-lg md:text-xl text-gray-600">
+                                    Kayzera is a tokenized real estate platform that allows you to buy fractional ownership in premium properties, protecting your capital from inflation.
                                 </p>
-                                <div className="mt-10 flex justify-center md:justify-start gap-4">
+                                <div className="mt-10 flex justify-center gap-4">
                                     <button onClick={() => setPage('register')} className="inline-flex items-center justify-center px-7 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg transition-transform hover:scale-110">
                                         Get Started
                                         <ArrowRightIcon className="ml-2 h-5 w-5" />
@@ -555,17 +555,6 @@ const LandingPage = ({ setPage, projects }) => {
                                     </button>
                                 </div>
                             </div>
-                            
-                            {/* Right Column: Image */}
-                            <div className="relative">
-                                <img 
-                                    src="https://images.unsplash.com/photo-1560185007-5f0bb1866cab?q=80&w=2070" 
-                                    alt="Modern luxurious living room"
-                                    className="rounded-2xl shadow-2xl w-full h-full object-cover aspect-[4/3]"
-                                />
-                                 <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-100 rounded-full -z-10"></div>
-                                 <div className="absolute -top-8 -left-8 w-32 h-32 bg-gray-200 rounded-full -z-10"></div>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -574,7 +563,7 @@ const LandingPage = ({ setPage, projects }) => {
                 <div className="py-16 bg-white">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl font-bold text-gray-800">A Smarter Era of Real Estate Investing</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900">A New Era of Real Estate Investing</h2>
                             <p className="mt-2 text-lg text-gray-600">Accessible • Liquid • Secure</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -583,21 +572,21 @@ const LandingPage = ({ setPage, projects }) => {
                                     <DollarSignIcon className="h-6 w-6"/>
                                 </div>
                                 <h3 className="mt-5 text-lg font-medium text-gray-900">Inflation Hedge</h3>
-                                <p className="mt-2 text-base text-gray-500">Invest and earn returns in USD stablecoins, mitigating local currency risks and preserving your wealth.</p>
+                                <p className="mt-2 text-base text-gray-600">Invest and earn returns in USD stablecoins, mitigating local currency risks and preserving your wealth.</p>
                             </div>
                             <div className="p-6">
                                 <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white mx-auto">
                                     <ZapIcon className="h-6 w-6"/>
                                 </div>
                                 <h3 className="mt-5 text-lg font-medium text-gray-900">Instant Liquidity</h3>
-                                <p className="mt-2 text-base text-gray-500">Our secondary market allows you to trade your "Market Tokens" with other investors before the project term ends.</p>
+                                <p className="mt-2 text-base text-gray-600">Our secondary market allows you to trade your "Market Tokens" with other investors before the project term ends.</p>
                             </div>
                             <div className="p-6">
                                 <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white mx-auto">
                                     <ShieldCheckIcon className="h-6 w-6"/>
                                 </div>
                                 <h3 className="mt-5 text-lg font-medium text-gray-900">Blockchain Transparency</h3>
-                                <p className="mt-2 text-base text-gray-500">Every transaction is recorded on a secure ledger, ensuring complete transparency and trust for all parties.</p>
+                                <p className="mt-2 text-base text-gray-600">Every transaction is recorded on a secure ledger, ensuring complete transparency and trust for all parties.</p>
                             </div>
                         </div>
                     </div>
@@ -607,7 +596,7 @@ const LandingPage = ({ setPage, projects }) => {
                 <div id="how-it-works" className="py-16 bg-gray-50">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl font-bold text-gray-800">Unlock Liquidity with Our Dual-Token System</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900">Unlock Liquidity with Our Dual-Token System</h2>
                             <p className="mt-2 text-lg text-gray-600">Every investment provides you with two distinct types of tokens, balancing long-term growth with immediate flexibility.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -640,7 +629,7 @@ const LandingPage = ({ setPage, projects }) => {
                              <div className="inline-block p-3 bg-indigo-100 rounded-full mb-4">
                                 <SparklesIcon className="w-8 h-8 text-indigo-600" />
                             </div>
-                            <h2 className="text-3xl font-bold text-gray-800">Powered by AI for Smarter Investing</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900">Powered by AI for Smarter Investing</h2>
                             <p className="mt-2 text-lg text-gray-600 max-w-3xl mx-auto">Kayzera leverages cutting-edge AI to provide deeper insights and streamline the investment process for everyone.</p>
                         </div>
                         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -661,7 +650,7 @@ const LandingPage = ({ setPage, projects }) => {
                 <div id="featured-projects" className="py-16 bg-white">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl font-bold text-gray-800">Featured Investment Opportunities</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900">Featured Investment Opportunities</h2>
                             <p className="mt-2 text-lg text-gray-600">Carefully vetted projects from reputable developers.</p>
                         </div>
                         <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
@@ -676,22 +665,22 @@ const LandingPage = ({ setPage, projects }) => {
                 <div id="compliance" className="py-16 bg-gray-50">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl text-center">
                         <ShieldCheckIcon className="h-16 w-16 mx-auto text-indigo-600" />
-                        <h2 className="mt-4 text-3xl font-bold text-gray-800">Legal & Regulatory Compliance</h2>
+                        <h2 className="mt-4 text-3xl font-extrabold text-gray-900">Legal & Regulatory Compliance</h2>
                         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
                             Operating with integrity and transparency is at the core of our mission.
                         </p>
-                        <div className="mt-12 text-left space-y-8 text-lg text-gray-700">
+                        <div className="mt-12 text-left space-y-8 text-lg text-gray-600">
                              <p>
                                We are committed to operating in full compliance with all relevant Nigerian laws and regulations. We believe that a strong regulatory framework is essential for building trust and ensuring the long-term success of our platform and the protection of our users.
                              </p>
                              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                 <h3 className="font-bold text-xl text-gray-800 mb-2">Regulatory Engagement</h3>
+                                 <h3 className="font-bold text-xl text-gray-900 mb-2">Regulatory Engagement</h3>
                                  <p>
                                     We will work closely with the <span className="font-semibold">Securities and Exchange Commission (SEC) Nigeria</span> to ensure that our platform meets all of the requirements for a crowdfunding portal and that our tokenized offerings are structured as compliant securities.
                                  </p>
                              </div>
                              <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                  <h3 className="font-bold text-xl text-gray-800 mb-2">Security & User Protection</h3>
+                                  <h3 className="font-bold text-xl text-gray-900 mb-2">Security & User Protection</h3>
                                  <p>
                                     We will adhere to all <span className="font-semibold">Anti-Money Laundering (AML)</span> and <span className="font-semibold">Know Your Customer (KYC)</span> regulations. This involves a robust verification process for all users to prevent fraud and ensure a secure investment environment for everyone on the platform.
                                  </p>
@@ -704,7 +693,7 @@ const LandingPage = ({ setPage, projects }) => {
                 <div id="faq" className="py-16 bg-white">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center mb-12">
-                            <h2 className="text-3xl font-bold text-gray-800">Frequently Asked Questions</h2>
+                            <h2 className="text-3xl font-extrabold text-gray-900">Frequently Asked Questions</h2>
                             <p className="mt-2 text-lg text-gray-600">
                                 Answers to common questions from our users.
                             </p>
@@ -712,7 +701,7 @@ const LandingPage = ({ setPage, projects }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                             {/* Investor FAQ */}
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center md:text-left">For Investors</h3>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center md:text-left">For Investors</h3>
                                 <div className="space-y-2">
                                     <FaqItem question="How do I invest in a project?">
                                         <p>First, complete your KYC verification in the settings. Once verified, navigate to the "Marketplace" tab, select "Properties," and click on a project you're interested in. On the project details page, you can enter the amount you wish to invest and complete the transaction from your funded wallet.</p>
@@ -727,7 +716,7 @@ const LandingPage = ({ setPage, projects }) => {
                             </div>
                             {/* Developer FAQ */}
                              <div>
-                                <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center md:text-left">For Developers</h3>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center md:text-left">For Developers</h3>
                                 <div className="space-y-2">
                                      <FaqItem question="How do I submit a new project for funding?">
                                         <p>After creating a developer account, navigate to the "Create New Project" tab in your dashboard. You'll be guided through a form to provide project details, financial projections, legal documents, and property images. Our team will review your submission within 5-7 business days.</p>
@@ -1137,7 +1126,7 @@ const FaqItem = ({ question, children }) => {
     return (
         <div className="border-b">
             <button onClick={() => setIsOpen(!isOpen)} className="flex justify-between items-center w-full py-5 text-left">
-                <span className="font-semibold text-lg">{question}</span>
+                <span className="font-semibold text-lg text-gray-900">{question}</span>
                 <ChevronDownIcon className={`w-6 h-6 transform transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
@@ -4258,7 +4247,7 @@ const Footer = ({ setPage, page }) => {
                     <div className="md:col-span-12 lg:col-span-4">
                         <div className="space-y-4">
                             <a href="#" onClick={() => setPage('landing')} className="flex-shrink-0 flex items-center gap-2">
-                                <KayzeraLogo className="h-10 w-auto" textColor="white" taglineColor="#9ca3af"/>
+                                <KayzeraLogo className="h-12 w-auto" textColor="white" taglineColor="#9ca3af"/>
                             </a>
                             <p className="text-gray-400 text-base max-w-xs">Democratizing real estate for everyone by making it accessible, transparent, and liquid.</p>
                             <DownloadLogoButton />
@@ -4602,6 +4591,17 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
