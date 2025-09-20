@@ -1,4 +1,4 @@
-     // --- Blue Reverted Clone: app_clone_blue.jsx ---
+       // --- Blue Reverted Clone: app_clone_blue.jsx ---
 // Reverted color theme from emerald back to blue/indigo.
 // Generated automatically.
 
@@ -234,10 +234,10 @@ const KayzeraLogo = ({ textColor = "#1f2937", taglineColor = "#6b7280", ...props
         <path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradient)" />
     </g>
     <g transform="translate(28, 0)">
-      <text y="15" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="bold" fill={textColor}>
+      <text y="15" fontFamily="Inter, sans-serif" fontSize="11" fontWeight="bold" fill={textColor}>
         Kayzera
       </text>
-      <text y="26" fontFamily="Inter, sans-serif" fontSize="6.5" fontWeight="normal" fill={taglineColor}>
+      <text y="24" fontFamily="Inter, sans-serif" fontSize="5.5" fontWeight="normal" fill={taglineColor}>
         Real estate, reimagined
       </text>
     </g>
@@ -331,7 +331,7 @@ const DownloadLogoButton = () => {
     const handleDownload = (e) => {
         e.preventDefault();
 
-        const svgString = `<svg viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg" style="font-family: Inter, sans-serif;"><defs><linearGradient id="logoGradientDownload" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><g transform="translate(0, 2)"><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientDownload)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientDownload)" /></g><g transform="translate(28, 0)"><text y="15" font-size="14" font-weight="bold" fill="#1f2937">Kayzera</text><text y="26" font-size="6.5" font-weight="normal" fill="#6b7280">Real estate, reimagined</text></g></svg>`;
+        const svgString = `<svg viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg" style="font-family: Inter, sans-serif;"><defs><linearGradient id="logoGradientDownload" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><g transform="translate(0, 2)"><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientDownload)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientDownload)" /></g><g transform="translate(28, 0)"><text y="15" font-size="11" font-weight="bold" fill="#1f2937">Kayzera</text><text y="24" font-size="5.5" font-weight="normal" fill="#6b7280">Real estate, reimagined</text></g></svg>`;
         const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
 
         const canvas = document.createElement('canvas');
@@ -4591,6 +4591,10 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
 
 
 
