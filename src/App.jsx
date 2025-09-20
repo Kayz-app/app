@@ -482,7 +482,7 @@ const Header = ({ page, currentUser, setPage, setCurrentUser }) => {
     };
 
     return (
-        <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50">
             <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
@@ -673,13 +673,13 @@ const LandingPage = ({ setPage, projects }) => {
                              <p>
                                We are committed to operating in full compliance with all relevant Nigerian laws and regulations. We believe that a strong regulatory framework is essential for building trust and ensuring the long-term success of our platform and the protection of our users.
                              </p>
-                             <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                             <div className="p-6 bg-white rounded-lg border border-gray-200">
                                  <h3 className="font-bold text-xl text-gray-900 mb-2">Regulatory Engagement</h3>
                                  <p>
                                     We will work closely with the <span className="font-semibold">Securities and Exchange Commission (SEC) Nigeria</span> to ensure that our platform meets all of the requirements for a crowdfunding portal and that our tokenized offerings are structured as compliant securities.
                                  </p>
                              </div>
-                             <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                             <div className="p-6 bg-white rounded-lg border border-gray-200">
                                   <h3 className="font-bold text-xl text-gray-900 mb-2">Security & User Protection</h3>
                                  <p>
                                     We will adhere to all <span className="font-semibold">Anti-Money Laundering (AML)</span> and <span className="font-semibold">Know Your Customer (KYC)</span> regulations. This involves a robust verification process for all users to prevent fraud and ensure a secure investment environment for everyone on the platform.
@@ -4591,6 +4591,48 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
