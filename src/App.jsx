@@ -1,4 +1,4 @@
-
+  
 
     import React, { useState, useEffect, useMemo, useRef } from 'react';
 
@@ -222,15 +222,15 @@ const KayzeraLogo = ({ textColor = "#1f2937", taglineColor = "#6b7280", ...props
         <stop offset="100%" style={{stopColor: '#4f46e5', stopOpacity: 1}} />
       </linearGradient>
     </defs>
-    <g transform="translate(0, 2)">
+    <g transform="translate(0, -1.5) scale(1, 1.375)">
         <path d="M4 4H8V20H4V4Z" fill="url(#logoGradient)" />
         <path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradient)" />
     </g>
     <g transform="translate(28, 0)">
-      <text y="15" fontFamily="Inter, sans-serif" fontSize="12" fontWeight="bold" fill={textColor}>
+      <text y="16" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="bold" fill={textColor}>
         kayzera
       </text>
-      <text y="25" fontFamily="Inter, sans-serif" fontSize="6" fontWeight="normal" fill={taglineColor}>
+      <text y="26" fontFamily="Inter, sans-serif" fontSize="6" fontWeight="normal" fill={taglineColor}>
         Real estate, reimagined
       </text>
     </g>
@@ -324,7 +324,7 @@ const DownloadLogoButton = () => {
     const handleDownload = (e) => {
         e.preventDefault();
 
-        const svgString = `<svg viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg" style="font-family: Inter, sans-serif;"><defs><linearGradient id="logoGradientDownload" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><g transform="translate(0, 2)"><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientDownload)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientDownload)" /></g><g transform="translate(28, 0)"><text y="15" font-size="12" font-weight="bold" fill="#1f2937">kayzera</text><text y="25" font-size="6" font-weight="normal" fill="#6b7280">Real estate, reimagined</text></g></svg>`;
+        const svgString = `<svg viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg" style="font-family: Inter, sans-serif;"><defs><linearGradient id="logoGradientDownload" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><g transform="translate(0, -1.5) scale(1, 1.375)"><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientDownload)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientDownload)" /></g><g transform="translate(28, 0)"><text y="16" font-size="14" font-weight="bold" fill="#1f2937">kayzera</text><text y="26" font-size="6" font-weight="normal" fill="#6b7280">Real estate, reimagined</text></g></svg>`;
         const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
 
         const canvas = document.createElement('canvas');
@@ -4666,4 +4666,39 @@ export default function App() {
 
 
 
+
+
+
+
+
+
+
+
+// --- Responsive Dual Table-Card Wrapper --- //
+const ResponsiveTable = ({ headers, rows, renderRow, renderCard }) => {
+  return (
+    <>
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {headers.map((h, idx) => (
+                <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {rows.map((row, idx) => renderRow(row, idx))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-4">
+        {rows.map((row, idx) => renderCard(row, idx))}
+      </div>
+    </>
+  );
+};
 
