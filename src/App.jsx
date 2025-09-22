@@ -1,4 +1,4 @@
-  
+
 
     import React, { useState, useEffect, useMemo, useRef } from 'react';
 
@@ -4668,37 +4668,4 @@ export default function App() {
 
 
 
-
-
-
-
-
-
-// --- Responsive Dual Table-Card Wrapper --- //
-const ResponsiveTable = ({ headers, rows, renderRow, renderCard }) => {
-  return (
-    <>
-      {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {headers.map((h, idx) => (
-                <th key={idx} className="px-6 py-3 text-left text-xs font-medium text-gray-500">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {rows.map((row, idx) => renderRow(row, idx))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-4">
-        {rows.map((row, idx) => renderCard(row, idx))}
-      </div>
-    </>
-  );
-};
 
