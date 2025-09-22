@@ -1,4 +1,4 @@
-  
+   
 
     import React, { useState, useEffect, useMemo, useRef } from 'react';
 
@@ -167,50 +167,83 @@ const initialMarketListings = [
     { listingId: 1, tokenId: 'proj2-mkt-1', sellerId: 1, projectId: 2, amount: 2000, price: 2100 } // Ada is selling 2000 of her market tokens for project 2 at a premium
 ];
 
-// --- AI API INTEGRATION --- //
 
-// This is a generic helper function to call the AI API.
-// It includes exponential backoff for retrying requests.
-const callAIAPI = async (userPrompt, retries = 3, delay = 1000) => {
-    const apiKey = process.env.OPENAI_API_KEY; // ensure this is set in your environment
-    const apiUrl = "https://api.openai.com/v1/chat/completions";
+// --- AI API INTEGRATION (SECURE VIA BACKEND) --- //
 
+// Instead of calling OpenAI directly with the API key from the frontend (which is insecure),
+// this function now calls a backend endpoint (`/api/ai`) that safely holds the API key.
+// You must implement the `/api/ai` endpoint in your backend (Node/Express, Next.js API routes, etc.).
+
+// --- AI API INTEGRATION (SECURE + COMPATIBLE) --- //
+// callAIAPI now accepts either:
+// - a string (plain user prompt)
+// - an OpenAI-style { messages: [...] } object
+// It normalizes the input and sends either `messages` or `prompt` to the backend `/api/ai`.
+// The backend should accept either `{ messages }` (OpenAI style) or `{ prompt }` (string) and call OpenAI accordingly.
+
+// --- AI API INTEGRATION (OPENAI ONLY, SECURE) --- //
+// callAIAPI now strictly uses OpenAI's messages format.
+// Always supply either a string prompt (which will be wrapped) or a { messages } array.
+// The backend (/api/ai) will receive { messages } and must forward them to OpenAI securely.
+const callAIAPI = async (input, options = {}) => {
     try {
-        const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${apiKey}`,
-                "OpenAI-Organization": process.env.OPENAI_ORG_ID
-            },
-            body: JSON.stringify({
-                model: "gpt-4.1-mini",
-                messages: [
-                    { role: "system", content: "You are an AI assistant that provides due diligence, investment analysis, and project proposal generation for real estate investors and developers." },
-                    { role: "user", content: userPrompt }
-                ],
-                temperature: 0.7
-            })
-        });
+        let bodyToSend;
 
-        if (!response.ok) {
-            if (response.status === 429 && retries > 0) {
-                console.warn(`Rate limited. Retrying in ${delay/1000}s... (${retries} retries left)`);
-                await new Promise(res => setTimeout(res, delay));
-                return callAIAPI(userPrompt, retries - 1, delay * 2);
-            }
-            const errorBody = await response.json();
-            throw new Error(`OpenAI API Error: ${response.status} - ${JSON.stringify(errorBody)}`);
+        if (typeof input === "string") {
+            bodyToSend = {
+                messages: [
+                    { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
+                    { role: "user", content: input }
+                ]
+            };
+        } else if (input && Array.isArray(input.messages)) {
+            bodyToSend = { messages: input.messages };
+        } else {
+            // Fallback: wrap unknown input
+            bodyToSend = {
+                messages: [
+                    { role: "system", content: "You are an AI assistant." },
+                    { role: "user", content: JSON.stringify(input) }
+                ]
+            };
         }
 
-        const result = await response.json();
-        return result.choices[0].message.content;
+        // Merge options (like temperature, model) if provided
+        if (options && typeof options === "object") {
+            bodyToSend = { ...bodyToSend, ...options };
+        }
 
-    } catch (error) {
-        console.error("Error calling OpenAI API:", error);
-        throw error;
+        const resp = await fetch("/api/ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(bodyToSend),
+        });
+
+        if (!resp.ok) {
+            let errBody;
+            try { errBody = await resp.json(); } catch (e) { errBody = await resp.text(); }
+            throw new Error(`Backend AI API Error: ${resp.status} - ${JSON.stringify(errBody)}`);
+        }
+
+        const data = await resp.json();
+
+        if (Array.isArray(data.choices) && data.choices[0]?.message?.content) {
+            return data.choices[0].message.content;
+        }
+        if (Array.isArray(data.choices) && typeof data.choices[0]?.text === "string") {
+            return data.choices[0].text;
+        }
+        if (typeof data.text === "string") return data.text;
+        if (typeof data.content === "string") return data.content;
+
+        return JSON.stringify(data);
+    } catch (err) {
+        console.error("callAIAPI error:", err);
+        throw err;
     }
 };
+
+
 
 
 // --- SVG ICONS AS REACT COMPONENTS --- //
@@ -2301,7 +2334,6 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
     const [mainImage, setMainImage] = useState(project.images[0]);
     const [investmentAmount, setInvestmentAmount] = useState('');
     const [isInvestmentModalOpen, setInvestmentModalOpen] = useState(false);
-    const [isGeminiChatOpen, setGeminiChatOpen] = useState(false);
     
     const isKycVerified = currentUser.kycStatus === 'Verified';
     const stablecoinBalance = (currentUser.wallet.usdt || 0) + (currentUser.wallet.usdc || 0);
@@ -2430,7 +2462,6 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                                         {isDeveloper ? "Developers cannot invest" : isFunded ? "Project Fully Funded" : !isKycVerified ? "Verify KYC to Invest" : "Invest Now"}
                                      </button>
                                      <button 
-                                        onClick={() => setGeminiChatOpen(true)}
                                         className="mt-2 w-full flex items-center justify-center bg-transparent text-indigo-600 px-6 py-2 rounded-md font-semibold hover:bg-indigo-50 border border-indigo-200 transition-colors"
                                      >
                                         <SparklesIcon className="w-5 h-5 mr-2" /> ✨ Ask AI about this Property
@@ -2449,8 +2480,6 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                 details={{ numericInvestmentAmount, fee, totalDebit, tokensToReceive }}
             />
              <AIChatModal 
-                isOpen={isGeminiChatOpen}
-                onClose={() => setGeminiChatOpen(false)}
                 project={project}
             />
         </div>
@@ -2505,13 +2534,9 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
             - Status: ${project.status}
             `;
 
-            const payload = {
-                contents: [{ parts: [{ text: input }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-            };
+            
 
-            const responseText = await callAIAPI(payload);
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             const botMessage = { sender: 'bot', text: responseText };
             setMessages(prev => [...prev, botMessage]);
 
@@ -3348,10 +3373,8 @@ const DeveloperCreateProject = () => {
 
             Highlight the key selling points and investment potential. Keep it to one or two paragraphs.`;
 
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-            };
-            const generatedText = await callAIAPI(payload);
+            
+            const generatedText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             
             setFormData(prev => ({...prev, description: generatedText }));
 
@@ -4048,12 +4071,8 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
             
             Based on this information and any publicly available data about the location or developer, generate a summary and risk analysis.`;
 
-             const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-            };
-            const responseText = await callAIAPI(payload);
+             
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             setSummary({ text: responseText, isLoading: false, error: '' });
         } catch(e) {
             setSummary({ text: '', isLoading: false, error: 'Failed to generate summary. Please check the connection and try again.' });
@@ -4613,6 +4632,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
