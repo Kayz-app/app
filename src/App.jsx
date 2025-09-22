@@ -1,6 +1,7 @@
-   
+    
 
     import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { callAIAPI } from "./api/ai";
 
 // --- MOCK DATA --- //
 // In a real application, this data would come from a secure backend and blockchain.
@@ -185,63 +186,8 @@ const initialMarketListings = [
 // callAIAPI now strictly uses OpenAI's messages format.
 // Always supply either a string prompt (which will be wrapped) or a { messages } array.
 // The backend (/api/ai) will receive { messages } and must forward them to OpenAI securely.
-const callAIAPI = async (input, options = {}) => {
-    try {
-        let bodyToSend;
+// callAIAPI moved to /src/api/ai.js
 
-        if (typeof input === "string") {
-            bodyToSend = {
-                messages: [
-                    { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
-                    { role: "user", content: input }
-                ]
-            };
-        } else if (input && Array.isArray(input.messages)) {
-            bodyToSend = { messages: input.messages };
-        } else {
-            // Fallback: wrap unknown input
-            bodyToSend = {
-                messages: [
-                    { role: "system", content: "You are an AI assistant." },
-                    { role: "user", content: JSON.stringify(input) }
-                ]
-            };
-        }
-
-        // Merge options (like temperature, model) if provided
-        if (options && typeof options === "object") {
-            bodyToSend = { ...bodyToSend, ...options };
-        }
-
-        const resp = await fetch("/api/ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(bodyToSend),
-        });
-
-        if (!resp.ok) {
-            let errBody;
-            try { errBody = await resp.json(); } catch (e) { errBody = await resp.text(); }
-            throw new Error(`Backend AI API Error: ${resp.status} - ${JSON.stringify(errBody)}`);
-        }
-
-        const data = await resp.json();
-
-        if (Array.isArray(data.choices) && data.choices[0]?.message?.content) {
-            return data.choices[0].message.content;
-        }
-        if (Array.isArray(data.choices) && typeof data.choices[0]?.text === "string") {
-            return data.choices[0].text;
-        }
-        if (typeof data.text === "string") return data.text;
-        if (typeof data.content === "string") return data.content;
-
-        return JSON.stringify(data);
-    } catch (err) {
-        console.error("callAIAPI error:", err);
-        throw err;
-    }
-};
 
 
 
@@ -1645,9 +1591,12 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
                                      const lastClaimDate = new Date(token.lastApyClaimDate);
                                      const now = new Date();
                                      // Allow claim if the current month is after the last claimed month.
-                                     if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
-                                         canClaimApy = true;
-                                     }
+                                     const lastClaim = new Date(token.lastApyClaimDate);
+const nextClaimDate = new Date(lastClaim);
+nextClaimDate.setMonth(nextClaimDate.getMonth() + 1);
+if (endDate > now && now >= nextClaimDate) {
+    canClaimApy = true;
+}
                                  }
                                  
                                  return (
@@ -2536,7 +2485,12 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
 
             
 
-            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const responseText = await callAIAPI({
+    messages: [
+        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
+        { role: 'user', content: userPrompt }
+    ]
+});
             const botMessage = { sender: 'bot', text: responseText };
             setMessages(prev => [...prev, botMessage]);
 
@@ -3374,7 +3328,12 @@ const DeveloperCreateProject = () => {
             Highlight the key selling points and investment potential. Keep it to one or two paragraphs.`;
 
             
-            const generatedText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const generatedText = await callAIAPI({
+    messages: [
+        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
+        { role: 'user', content: userPrompt }
+    ]
+});
             
             setFormData(prev => ({...prev, description: generatedText }));
 
@@ -4072,7 +4031,12 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
             Based on this information and any publicly available data about the location or developer, generate a summary and risk analysis.`;
 
              
-            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const responseText = await callAIAPI({
+    messages: [
+        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
+        { role: 'user', content: userPrompt }
+    ]
+});
             setSummary({ text: responseText, isLoading: false, error: '' });
         } catch(e) {
             setSummary({ text: '', isLoading: false, error: 'Failed to generate summary. Please check the connection and try again.' });
@@ -4460,8 +4424,20 @@ export default function App() {
             // Update user's wallet
             const userToUpdate = users[currentUser.email];
             if (userToUpdate) {
-                userToUpdate.wallet.usdt += monthlyApyAmount;
-                setUsers(prevUsers => ({...prevUsers, [currentUser.email]: userToUpdate}));
+                setUsers(prevUsers => {
+    const userToUpdate = prevUsers[currentUser.email];
+    if (!userToUpdate) return prevUsers;
+
+    const updatedUser = {
+        ...userToUpdate,
+        wallet: {
+            ...userToUpdate.wallet,
+            usdt: (userToUpdate.wallet?.usdt || 0) + monthlyApyAmount
+        }
+    };
+
+    return { ...prevUsers, [currentUser.email]: updatedUser };
+});
             }
             
             // Update token's last claim date
@@ -4632,6 +4608,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
