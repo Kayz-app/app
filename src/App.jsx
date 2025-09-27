@@ -1320,39 +1320,76 @@ const HelpAndSupport = ({ currentUser }) => {
 // --- INVESTOR DASHBOARD --- //
 // --- CHART COMPONENTS --- //
 const PortfolioPerformanceChart = ({ data }) => {
+    const [hoveredPoint, setHoveredPoint] = useState(null);
+    const [pathLength, setPathLength] = useState(0);
+    const [isAnimated, setIsAnimated] = useState(false);
+    const svgRef = useRef(null);
+    const pathRef = useRef(null);
+
     const width = 500;
     const height = 250;
-    const padding = 50;
+    const padding = { top: 20, right: 30, bottom: 40, left: 50 };
+
+    useEffect(() => {
+        if (pathRef.current) {
+            const length = pathRef.current.getTotalLength();
+            setPathLength(length);
+            // Trigger animation after a short delay
+            setTimeout(() => {
+                setIsAnimated(true);
+            }, 100);
+        }
+    }, [data]);
+
+
+    if (!data || data.length === 0) {
+        return <div className="flex items-center justify-center h-full text-gray-500">No performance data available.</div>;
+    }
 
     const maxValue = Math.max(...data.map(d => d.value));
-    const minValue = Math.min(...data.map(d => d.value));
+    const minValue = 0; // Start y-axis from 0 for better perspective
     
-    const xScale = (index) => padding + (index / (data.length - 1)) * (width - 2 * padding);
-    const yScale = (value) => height - padding - ((value - minValue) / (maxValue - minValue)) * (height - 2 * padding);
+    const xScale = (index) => padding.left + (index / (data.length - 1)) * (width - padding.left - padding.right);
+    const yScale = (value) => {
+        const valueRange = maxValue - minValue;
+        if (valueRange === 0) return (height - padding.top - padding.bottom) / 2 + padding.top;
+        return height - padding.bottom - ((value - minValue) / valueRange) * (height - padding.top - padding.bottom);
+    };
     
     const path = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xScale(i)} ${yScale(d.value)}`).join(' ');
-    const areaPath = `${path} L ${xScale(data.length - 1)} ${height - padding} L ${xScale(0)} ${height - padding} Z`;
+    const areaPath = `${path} L ${xScale(data.length - 1)} ${height - padding.bottom} L ${xScale(0)} ${height - padding.bottom} Z`;
 
     const yAxisLabels = () => {
         const labels = [];
         const steps = 4;
+        const range = maxValue - minValue;
+        if (range === 0) return null;
+
         for (let i = 0; i <= steps; i++) {
-            const value = minValue + (i / steps) * (maxValue - minValue);
+            const value = minValue + (i / steps) * range;
             labels.push(
                 <g key={i}>
-                    <text x={padding - 10} y={yScale(value)} dy="0.35em" style={{ fontSize: '10px', fill: 'currentColor', textAnchor: 'end' }} className="text-gray-500">
-                        ${(value / 1000).toFixed(1)}k
+                    <text x={padding.left - 10} y={yScale(value)} dy="0.35em" style={{ fontSize: '10px', fill: 'currentColor', textAnchor: 'end' }} className="text-gray-500">
+                        ${(value / 1000).toFixed(0)}k
                     </text>
-                     <line x1={padding} y1={yScale(value)} x2={width-padding} y2={yScale(value)} className="stroke-current text-gray-200" strokeDasharray="2,2"/>
+                     <line x1={padding.left} y1={yScale(value)} x2={width-padding.right} y2={yScale(value)} className="stroke-current text-gray-200" strokeDasharray="2,2"/>
                 </g>
             );
         }
         return labels;
     };
+    
+    const handleMouseEnter = (pointData, index) => {
+        setHoveredPoint({ ...pointData, index });
+    };
+
+    const handleMouseLeave = () => {
+        setHoveredPoint(null);
+    };
 
     return (
-        <div className="w-full h-full">
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
+        <div className="w-full h-full relative">
+            <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" onMouseLeave={handleMouseLeave}>
                 <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.4"/>
@@ -1360,32 +1397,89 @@ const PortfolioPerformanceChart = ({ data }) => {
                     </linearGradient>
                 </defs>
                 
-                {/* Y-axis labels and grid lines */}
                 {yAxisLabels()}
 
-                {/* X-axis labels */}
                 {data.map((d, i) => (
-                    <text key={i} x={xScale(i)} y={height - padding + 15} style={{ fontSize: '10px', fill: 'currentColor', textAnchor: 'middle' }} className="text-gray-500">
+                    <text key={i} x={xScale(i)} y={height - padding.bottom + 20} style={{ fontSize: '10px', fill: 'currentColor', textAnchor: 'middle' }} className="text-gray-500">
                         {d.month}
                     </text>
                 ))}
 
-                {/* Area path */}
-                <path d={areaPath} fill="url(#areaGradient)" />
+                <path 
+                    d={areaPath} 
+                    fill="url(#areaGradient)" 
+                    className="transition-opacity duration-1000"
+                    style={{ opacity: isAnimated ? 1 : 0 }}
+                />
+                <path 
+                    ref={pathRef}
+                    d={path} 
+                    fill="none" 
+                    stroke="#4f46e5" 
+                    strokeWidth="2" 
+                    strokeDasharray={pathLength}
+                    strokeDashoffset={isAnimated ? 0 : pathLength}
+                    style={{ transition: 'stroke-dashoffset 1.5s ease-in-out' }}
+                />
 
-                {/* Line path */}
-                <path d={path} fill="none" stroke="#4f46e5" strokeWidth="2" />
-
-                {/* Data points */}
-                {data.map((d, i) => (
-                    <circle key={i} cx={xScale(i)} cy={yScale(d.value)} r="4" fill="#fff" stroke="#4f46e5" strokeWidth="2" />
+                {/* Interaction layer */}
+                {isAnimated && data.map((d, i) => (
+                    <g key={`interactive-${i}`} className="opacity-0 hover:opacity-100 transition-opacity">
+                        <circle cx={xScale(i)} cy={yScale(d.value)} r="10" fill="transparent" onMouseEnter={() => handleMouseEnter(d, i)}/>
+                    </g>
                 ))}
+
+                {/* Hover effects */}
+                {hoveredPoint && (
+                    <g className="pointer-events-none">
+                        <line 
+                            x1={xScale(hoveredPoint.index)} 
+                            y1={yScale(hoveredPoint.value)} 
+                            x2={xScale(hoveredPoint.index)} 
+                            y2={height - padding.bottom} 
+                            stroke="#4f46e5" 
+                            strokeWidth="1" 
+                            strokeDasharray="3,3" 
+                        />
+                        <circle 
+                            cx={xScale(hoveredPoint.index)} 
+                            cy={yScale(hoveredPoint.value)} 
+                            r="6" 
+                            fill="#4f46e5" 
+                            stroke="#fff" 
+                            strokeWidth="2"
+                            className="transition-transform duration-200"
+                        />
+                    </g>
+                )}
             </svg>
+            {hoveredPoint && svgRef.current && (
+                <div 
+                    className="absolute bg-gray-800 text-white text-xs rounded-md p-2 shadow-lg pointer-events-none transition-all duration-200 opacity-100"
+                    style={{
+                        top: yScale(hoveredPoint.value) * (svgRef.current.clientHeight / height) - 40,
+                        left: xScale(hoveredPoint.index) * (svgRef.current.clientWidth / width),
+                        transform: 'translateX(-50%)',
+                    }}
+                >
+                    <p className="font-bold">{hoveredPoint.month}</p>
+                    <p>{formatCurrency(hoveredPoint.value)}</p>
+                </div>
+            )}
         </div>
     );
 };
 
 const AssetAllocationChart = ({ data }) => {
+    const [hoveredSegment, setHoveredSegment] = useState(null);
+    const [isAnimated, setIsAnimated] = useState(false);
+
+    useEffect(() => {
+        // Trigger animation after component mounts
+        const timer = setTimeout(() => setIsAnimated(true), 100);
+        return () => clearTimeout(timer);
+    }, [data]);
+
     const size = 200;
     const strokeWidth = 25;
     const radius = (size - strokeWidth) / 2;
@@ -1403,41 +1497,69 @@ const AssetAllocationChart = ({ data }) => {
                         cy={size / 2}
                         r={radius}
                         fill="transparent"
-                        stroke="#e5e7eb"
+                        stroke="#e5e7eb" // Background ring
                         strokeWidth={strokeWidth}
                     />
                     {data.map((item, index) => {
-                        const percent = (item.value / totalValue) * 100;
-                        const offset = circumference - (cumulativePercent / 100) * circumference;
-                        const dash = (percent / 100) * circumference;
+                        const isHovered = hoveredSegment && hoveredSegment.name === item.name;
+                        const currentStrokeWidth = isHovered ? strokeWidth + 5 : strokeWidth;
+                        const currentRadius = (size - currentStrokeWidth) / 2;
+                        const currentCircumference = 2 * Math.PI * currentRadius;
+
+                        const percent = totalValue > 0 ? (item.value / totalValue) * 100 : 0;
+                        const dash = (percent / 100) * currentCircumference;
+                        const offset = (cumulativePercent / 100) * currentCircumference;
                         cumulativePercent += percent;
+
                         return (
                             <circle
                                 key={index}
                                 cx={size / 2}
                                 cy={size / 2}
-                                r={radius}
+                                r={currentRadius}
                                 fill="transparent"
                                 stroke={item.color}
-                                strokeWidth={strokeWidth}
-                                strokeDasharray={`${dash} ${circumference}`}
-                                strokeDashoffset={-offset}
-                                className="transition-all duration-500"
+                                strokeWidth={currentStrokeWidth}
+                                strokeDashoffset={isAnimated ? -offset : currentCircumference}
+                                style={{
+                                    strokeDasharray: `${dash} ${currentCircumference - dash}`,
+                                    transition: 'stroke-dashoffset 1s ease-out, stroke-width 0.2s, r 0.2s',
+                                    transitionDelay: `${index * 150}ms`,
+                                }}
+                                onMouseEnter={() => setHoveredSegment(item)}
+                                onMouseLeave={() => setHoveredSegment(null)}
+                                className="cursor-pointer"
                             />
                         );
                     })}
                 </svg>
-                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xs text-gray-500">Total</span>
-                    <span className="text-xl font-bold text-gray-800">${(totalValue / 1000).toFixed(1)}k</span>
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2">
+                    {hoveredSegment ? (
+                        <>
+                           <span className="text-sm text-gray-600 font-semibold truncate max-w-[120px]">{hoveredSegment.name}</span>
+                           <span className="text-xl font-bold text-gray-800">{formatCurrency(hoveredSegment.value)}</span>
+                           <span className="text-xs text-gray-500">{totalValue > 0 ? ((hoveredSegment.value / totalValue) * 100).toFixed(1) : 0}%</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-xs text-gray-500">Total Value</span>
+                            <span className="text-xl font-bold text-gray-800">{formatCurrency(totalValue)}</span>
+                        </>
+                    )}
                 </div>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full md:w-auto">
                 {data.map((item, index) => (
-                    <div key={index} className="flex items-center text-sm">
-                        <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: item.color }}></span>
-                        <span className="text-gray-600 mr-2">{item.name}:</span>
-                        <span className="font-semibold text-gray-800">{((item.value / totalValue) * 100).toFixed(1)}%</span>
+                    <div 
+                        key={index} 
+                        className="flex items-center text-sm p-1 rounded-md transition-all duration-200 cursor-pointer"
+                        onMouseEnter={() => setHoveredSegment(item)}
+                        onMouseLeave={() => setHoveredSegment(null)}
+                        style={{ backgroundColor: hoveredSegment && hoveredSegment.name === item.name ? item.color + '20' : 'transparent' }}
+                    >
+                        <span className="w-3 h-3 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: item.color }}></span>
+                        <span className="text-gray-600 mr-2 truncate">{item.name}:</span>
+                        <span className="font-semibold text-gray-800 ml-auto">{totalValue > 0 ? ((item.value / totalValue) * 100).toFixed(1) : 0}%</span>
                     </div>
                 ))}
             </div>
@@ -1645,12 +1767,9 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
                                      const lastClaimDate = new Date(token.lastApyClaimDate);
                                      const now = new Date();
                                      // Allow claim if the current month is after the last claimed month.
-                                     const lastClaim = new Date(token.lastApyClaimDate);
-const nextClaimDate = new Date(lastClaim);
-nextClaimDate.setMonth(nextClaimDate.getMonth() + 1);
-if (endDate > now && now >= nextClaimDate) {
-    canClaimApy = true;
-}
+                                     if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
+                                         canClaimApy = true;
+                                     }
                                  }
                                  
                                  return (
@@ -2539,12 +2658,7 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
 
             
 
-            const responseText = await callAIAPI({
-    messages: [
-        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
-        { role: 'user', content: (typeof userPrompt !== 'undefined' ? userPrompt : (typeof prompt !== 'undefined' ? prompt : '')) }
-    ]
-});
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             const botMessage = { sender: 'bot', text: responseText };
             setMessages(prev => [...prev, botMessage]);
 
@@ -3382,12 +3496,7 @@ const DeveloperCreateProject = () => {
             Highlight the key selling points and investment potential. Keep it to one or two paragraphs.`;
 
             
-            const generatedText = await callAIAPI({
-    messages: [
-        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
-        { role: 'user', content: (typeof userPrompt !== 'undefined' ? userPrompt : (typeof prompt !== 'undefined' ? prompt : '')) }
-    ]
-});
+            const generatedText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             
             setFormData(prev => ({...prev, description: generatedText }));
 
@@ -4085,12 +4194,7 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
             Based on this information and any publicly available data about the location or developer, generate a summary and risk analysis.`;
 
              
-            const responseText = await callAIAPI({
-    messages: [
-        { role: 'system', content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
-        { role: 'user', content: (typeof userPrompt !== 'undefined' ? userPrompt : (typeof prompt !== 'undefined' ? prompt : '')) }
-    ]
-});
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
             setSummary({ text: responseText, isLoading: false, error: '' });
         } catch(e) {
             setSummary({ text: '', isLoading: false, error: 'Failed to generate summary. Please check the connection and try again.' });
@@ -4354,6 +4458,12 @@ const Footer = ({ setPage, page }) => {
                 </div>
                 <div className="mt-8 border-t border-gray-700 pt-8 text-center">
                     <p className="text-base text-gray-500">&copy; 2025 Kayzera. All rights reserved.</p>
+                    <p className="mt-4 text-xs text-gray-400 max-w-2xl mx-auto">
+                        Disclaimer: Kayzera is a financial technology platform, not a bank. 
+                        Investments in real estate are subject to risk, including potential loss
+                         of principal. Please review all investment materials carefully before 
+                        investing.
+                    </p>
                 </div>
             </div>
         </footer>
@@ -4478,20 +4588,8 @@ export default function App() {
             // Update user's wallet
             const userToUpdate = users[currentUser.email];
             if (userToUpdate) {
-                setUsers(prevUsers => {
-    const userToUpdate = prevUsers[currentUser.email];
-    if (!userToUpdate) return prevUsers;
-
-    const updatedUser = {
-        ...userToUpdate,
-        wallet: {
-            ...userToUpdate.wallet,
-            usdt: (userToUpdate.wallet?.usdt || 0) + monthlyApyAmount
-        }
-    };
-
-    return { ...prevUsers, [currentUser.email]: updatedUser };
-});
+                userToUpdate.wallet.usdt += monthlyApyAmount;
+                setUsers(prevUsers => ({...prevUsers, [currentUser.email]: userToUpdate}));
             }
             
             // Update token's last claim date
@@ -4662,67 +4760,6 @@ export default function App() {
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
