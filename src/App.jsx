@@ -821,11 +821,17 @@ const LoginPage = ({ setPage, setCurrentUser, users }) => {
         const user = users[email];
         if (user && user.password === password) {
             setCurrentUser(user);
+            let dashboardPage;
             switch (user.type) {
-                case 'investor': setPage('investorDashboard'); break;
-                case 'developer': setPage('developerDashboard'); break;
-                case 'admin': setPage('adminDashboard'); break;
-                default: setPage('landing');
+                case 'investor': dashboardPage = 'investorDashboard'; break;
+                case 'developer': dashboardPage = 'developerDashboard'; break;
+                case 'admin': dashboardPage = 'adminDashboard'; break;
+                default: dashboardPage = 'landing';
+            }
+            setPage(dashboardPage);
+            
+            if (dashboardPage.includes('Dashboard')) {
+                localStorage.setItem('kayzeraUser', JSON.stringify({ email: user.email, page: dashboardPage }));
             }
         } else {
             setError('Invalid email or password.');
@@ -1040,11 +1046,11 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
         setIsMobileMenuOpen(false);
     };
 
-    const SidebarContent = () => (
+    const SidebarContent = ({ uniqueId }) => (
         <div className="flex-grow">
             <div className="p-6">
                  <div className="flex items-center gap-2">
-                    <KayzeraLogo className="h-10 w-auto" uniqueId="sidebar"/>
+                    <KayzeraLogo className="h-10 w-auto" uniqueId={uniqueId}/>
                 </div>
             </div>
             <nav className="mt-6">
@@ -1068,7 +1074,7 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
             <div className="flex w-full">
                 {/* Desktop Sidebar */}
                 <aside className="w-64 bg-white shadow-md hidden md:flex flex-col">
-                    <SidebarContent />
+                    <SidebarContent uniqueId="desktop-sidebar"/>
                 </aside>
 
                 {/* Mobile Sidebar */}
@@ -1079,7 +1085,7 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
                      <button onClick={() => setIsMobileMenuOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 p-1">
                         <XIcon className="h-6 w-6" />
                     </button>
-                    <SidebarContent />
+                    <SidebarContent uniqueId="mobile-sidebar"/>
                 </aside>
 
 
@@ -4620,6 +4626,26 @@ export default function App() {
     const USD_NGN_RATE = 1500;
 
     useEffect(() => {
+        const savedUserData = localStorage.getItem('kayzeraUser');
+        if (savedUserData) {
+            try {
+                const { email, page: savedPage } = JSON.parse(savedUserData);
+                const user = users[email];
+                // Check if user exists and the saved page is a valid dashboard page
+                if (user && savedPage && savedPage.toLowerCase().includes('dashboard')) {
+                    setCurrentUser(user);
+                    setPage(savedPage);
+                } else {
+                    localStorage.removeItem('kayzeraUser');
+                }
+            } catch (error) {
+                console.error("Failed to parse user data from localStorage", error);
+                localStorage.removeItem('kayzeraUser');
+            }
+        }
+    }, []); // Empty dependency array ensures this runs only once on mount
+
+    useEffect(() => {
         // --- Favicon Logic ---
         const svgString = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="logoGradientFavicon" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color: #6366f1; stop-opacity: 1" /><stop offset="100%" style="stop-color: #4f46e5; stop-opacity: 1" /></linearGradient></defs><path d="M4 4H8V20H4V4Z" fill="url(#logoGradientFavicon)" /><path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradientFavicon)" /></svg>`;
         const dataUrl = `data:image/svg+xml;base64,${btoa(svgString)}`;
@@ -4696,6 +4722,7 @@ export default function App() {
     const handleLogout = () => {
         setCurrentUser(null);
         setPage('landing');
+        localStorage.removeItem('kayzeraUser');
     };
 
     const handleUpdateProjectStatus = (projectId, newStatus) => {
@@ -4896,6 +4923,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
