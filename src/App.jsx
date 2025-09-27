@@ -247,17 +247,17 @@ const callAIAPI = async (input, options = {}) => {
 
 
 // --- SVG ICONS AS REACT COMPONENTS --- //
-const KayzeraLogo = ({ textColor = "#1f2937", taglineColor = "#6b7280", ...props }) => (
+const KayzeraLogo = ({ textColor = "#1f2937", taglineColor = "#6b7280", uniqueId = "1", ...props }) => (
   <svg {...props} viewBox="0 0 120 28" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <linearGradient id={`logoGradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" style={{stopColor: '#6366f1', stopOpacity: 1}} />
         <stop offset="100%" style={{stopColor: '#4f46e5', stopOpacity: 1}} />
       </linearGradient>
     </defs>
     <g transform="translate(0, -1.5) scale(1, 1.375)">
-        <path d="M4 4H8V20H4V4Z" fill="url(#logoGradient)" />
-        <path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill="url(#logoGradient)" />
+        <path d="M4 4H8V20H4V4Z" fill={`url(#logoGradient-${uniqueId})`} />
+        <path d="M9 11L16 4L20 8L13 15V20H9V11Z" fill={`url(#logoGradient-${uniqueId})`} />
     </g>
     <g transform="translate(28, 0)">
       <text y="16" fontFamily="Inter, sans-serif" fontSize="14" fontWeight="bold" fill={textColor}>
@@ -522,7 +522,7 @@ const Header = ({ page, currentUser, setPage, setCurrentUser }) => {
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center">
                         <a href="#" onClick={() => handleNavItemClick('landing')} className="flex-shrink-0 flex items-center gap-2">
-                           <KayzeraLogo className="h-12 w-auto"/>
+                           <KayzeraLogo className="h-12 w-auto" uniqueId="header" />
                         </a>
                     </div>
                     <div className="hidden md:block">
@@ -798,7 +798,7 @@ const AuthPage = ({ children, title, setPage }) => {
         <div className="bg-gray-100 flex flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <a href="#" onClick={(e) => { e.preventDefault(); setPage('landing'); }} className="flex justify-center items-center gap-2 no-underline">
-                    <KayzeraLogo className="h-12 w-auto"/>
+                    <KayzeraLogo className="h-12 w-auto" uniqueId="auth"/>
                 </a>
                 <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">{title}</h2>
             </div>
@@ -1044,7 +1044,7 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
         <div className="flex-grow">
             <div className="p-6">
                  <div className="flex items-center gap-2">
-                    <KayzeraLogo className="h-10 w-auto" />
+                    <KayzeraLogo className="h-10 w-auto" uniqueId="sidebar"/>
                 </div>
             </div>
             <nav className="mt-6">
@@ -1087,10 +1087,13 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
                 <main className="flex-1 flex flex-col h-screen">
                      <div className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10 border-b">
                         <div className="flex items-center">
-                             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden mr-4 p-2 rounded-full text-gray-500 hover:text-indigo-600">
+                             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden mr-2 p-2 rounded-full text-gray-500 hover:text-indigo-600">
                                 <MenuIcon className="h-6 w-6"/>
                             </button>
-                            <h1 className="text-2xl font-bold text-gray-800">{activeItem}</h1>
+                            <div className="md:hidden">
+                                <KayzeraLogo className="h-8 w-auto" uniqueId="mobile-header" />
+                            </div>
+                            <h1 className="hidden md:block text-2xl font-bold text-gray-800">{activeItem}</h1>
                         </div>
                         <div className="flex items-center gap-2">
                              <div className="hidden sm:flex items-center gap-4">
@@ -4543,7 +4546,7 @@ const Footer = ({ setPage, page }) => {
                     <div className="md:col-span-12 lg:col-span-4">
                         <div className="space-y-4">
                             <a href="#" onClick={() => setPage('landing')} className="flex-shrink-0 flex items-center gap-2">
-                                <KayzeraLogo className="h-12 w-auto" textColor="white" taglineColor="#9ca3af"/>
+                                <KayzeraLogo className="h-12 w-auto" textColor="white" taglineColor="#9ca3af" uniqueId="footer"/>
                             </a>
                             <p className="text-gray-400 text-base max-w-xs">Democratizing real estate for everyone by making it accessible, transparent, and liquid.</p>
                             <DownloadLogoButton />
@@ -4893,6 +4896,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
