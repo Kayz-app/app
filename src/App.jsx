@@ -1738,7 +1738,8 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
         <>
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">My Token Holdings</h2>
-                <div className="overflow-x-auto">
+                {/* Desktop Table */}
+                <div className="overflow-x-auto hidden md:block">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
@@ -1752,7 +1753,7 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {userPortfolio.tokens.map(token => {
+                            {userPortfolio.tokens.length > 0 && userPortfolio.tokens.map(token => {
                                  const project = projects.find(p => p.id === token.projectId);
                                  if (!project) return null;
 
@@ -1808,11 +1809,73 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
                                      </tr>
                                  );
                             })}
-                             {userPortfolio.tokens.length === 0 && (
-                                <tr><td colSpan="7" className="text-center py-8 text-gray-500">You do not own any tokens yet.</td></tr>
-                            )}
                         </tbody>
                     </table>
+                     {userPortfolio.tokens.length === 0 && (
+                        <p className="text-center py-8 text-gray-500">You do not own any tokens yet.</p>
+                    )}
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-4">
+                    {userPortfolio.tokens.length > 0 ? userPortfolio.tokens.map(token => {
+                        const project = projects.find(p => p.id === token.projectId);
+                        if (!project) return null;
+                        const isSecurityToken = token.type === 'SECURITY';
+                        let endDate;
+                        let canClaimApy = false;
+
+                        if (isSecurityToken) {
+                             const startDate = new Date(project.startDate);
+                             endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
+                             const lastClaimDate = new Date(token.lastApyClaimDate);
+                             const now = new Date();
+                             if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
+                                 canClaimApy = true;
+                             }
+                        }
+
+                        return (
+                            <div key={token.tokenId} className="bg-gray-50 p-4 rounded-lg border">
+                                <div className="flex justify-between items-center mb-3 pb-3 border-b">
+                                    <div>
+                                        <h3 className="font-bold text-gray-800">{project.title}</h3>
+                                        <p className="text-xs text-gray-500">{project.tokenTicker}</p>
+                                    </div>
+                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${isSecurityToken ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                                        {token.type}
+                                    </span>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span className="text-gray-500">Amount:</span> <span className="font-semibold">{token.amount.toLocaleString()}</span></div>
+                                    <div className="flex justify-between"><span className="text-gray-500">Value (USD):</span> <span className="font-semibold">{formatCurrency(token.amount)}</span></div>
+                                    <div className="flex justify-between"><span className="text-gray-500">APY:</span> <span className="font-semibold text-green-600">{project.apy}%</span></div>
+                                    <div className="flex justify-between items-center"><span className="text-gray-500">Status:</span> <span>{isSecurityToken && endDate ? <LockupTimer endDate={endDate} /> : <span className="text-gray-500 capitalize">{token.status}</span>}</span></div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t">
+                                     {isSecurityToken ? (
+                                        <button 
+                                            disabled={!canClaimApy || currentUser.kycStatus !== 'Verified'} 
+                                            onClick={() => onClaimApy(token.tokenId, currentUser.id)}
+                                            className="w-full bg-green-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                        >
+                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Claim APY'}
+                                        </button>
+                                     ) : (
+                                        <button 
+                                            onClick={() => handleOpenListModal(token)}
+                                            className="w-full text-center text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100"
+                                            disabled={token.status === 'listed' || currentUser.kycStatus !== 'Verified'}
+                                        >
+                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC to List' : token.status === 'listed' ? 'Listed' : 'List for Sale'}
+                                        </button>
+                                     )}
+                                </div>
+                            </div>
+                        )
+                    }) : (
+                         <p className="text-center py-8 text-gray-500">You do not own any tokens yet.</p>
+                    )}
                 </div>
             </div>
             {listModalOpen && tokenToList && (
@@ -1942,7 +2005,7 @@ const ListTokenModal = ({ isOpen, onClose, token, project, onConfirmList, curren
                             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                         />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                          <div>
                             <label className="block text-sm font-medium text-gray-700">Price / Token (USD)</label>
                             <input 
@@ -2378,7 +2441,8 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Secondary Market Listings</h2>
-             <div className="overflow-x-auto">
+             {/* Desktop Table */}
+             <div className="overflow-x-auto hidden md:block">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -2415,10 +2479,44 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                              );
                         })}
                         {marketListings.length === 0 && (
-                            <tr><td colSpan="5" className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</td></tr>
+                            <tr><td colSpan="6" className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</td></tr>
                         )}
                     </tbody>
                 </table>
+            </div>
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+                 {marketListings.length > 0 ? marketListings.map(listing => {
+                    const project = projects.find(p => p.id === listing.projectId);
+                    const sellerName = Object.values(initialUsers).find(u => u.id === listing.sellerId)?.name || 'Unknown';
+                    const pricePerToken = listing.amount > 0 ? listing.price / listing.amount : 0;
+                    return (
+                        <div key={listing.listingId} className="bg-gray-50 p-4 rounded-lg border">
+                            <div className="flex justify-between items-center mb-3 pb-3 border-b">
+                                <div>
+                                    <h3 className="font-bold text-gray-800">{project?.title}</h3>
+                                    <p className="text-xs text-gray-500">Seller: {camouflageName(sellerName)}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-lg text-green-600">{formatCurrency(listing.price)}</p>
+                                    <p className="text-xs text-gray-500">{formatCurrency(pricePerToken)} / token</p>
+                                </div>
+                            </div>
+                            <div className="flex justify-between text-sm items-center mb-4">
+                                <span className="text-gray-600">Tokens for Sale:</span>
+                                <span className="font-semibold text-gray-800">{listing.amount.toLocaleString()} {project?.tokenTicker}</span>
+                            </div>
+                             <button
+                                disabled={currentUser.id === listing.sellerId || currentUser.type === 'developer' || currentUser.kycStatus !== 'Verified'}
+                                className="w-full bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                                {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : currentUser.id === listing.sellerId ? 'Your Listing' : 'Buy Now'}
+                            </button>
+                        </div>
+                    );
+                }) : (
+                     <p className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</p>
+                )}
             </div>
         </div>
     );
@@ -4760,6 +4858,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
