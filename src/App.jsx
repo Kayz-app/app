@@ -3279,10 +3279,20 @@ const LiveFundingCard = ({ project }) => {
 
 
 const DeveloperMyProjects = ({ projects, onManageProject }) => {
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'active': return 'bg-green-100 text-green-800';
+            case 'pending': return 'bg-yellow-100 text-yellow-800';
+            case 'funded': return 'bg-blue-100 text-blue-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    };
+
     return (
          <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-gray-800 mb-4">My Projects</h2>
-             <div className="overflow-x-auto">
+             {/* Desktop Table */}
+             <div className="overflow-x-auto hidden md:block">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -3294,18 +3304,13 @@ const DeveloperMyProjects = ({ projects, onManageProject }) => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {projects.map(project => (
+                        {projects.length > 0 ? projects.map(project => (
                              <tr key={project.id}>
                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.fundingGoal)}</td>
                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.amountRaised)}</td>
                                  <td className="px-6 py-4 whitespace-nowrap">
-                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                         project.status === 'active' ? 'bg-green-100 text-green-800' :
-                                         project.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                         project.status === 'funded' ? 'bg-blue-100 text-blue-800' :
-                                         'bg-gray-100 text-gray-800'
-                                     }`}>
+                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(project.status)}`}>
                                          {project.status}
                                      </span>
                                  </td>
@@ -3313,9 +3318,39 @@ const DeveloperMyProjects = ({ projects, onManageProject }) => {
                                      <button onClick={() => onManageProject(project.id)} className="text-indigo-600 hover:text-indigo-900">Manage</button>
                                  </td>
                              </tr>
-                        ))}
+                        )) : (
+                            <tr><td colSpan="5" className="text-center py-8 text-gray-500">You have not created any projects yet.</td></tr>
+                        )}
                     </tbody>
                 </table>
+            </div>
+            
+            {/* Mobile Cards */}
+            <div className="md:hidden space-y-4">
+                {projects.length > 0 ? projects.map(project => (
+                    <div key={project.id} className="bg-gray-50 p-4 rounded-lg border">
+                        <div className="flex justify-between items-center mb-3 pb-3 border-b">
+                            <div>
+                                <h3 className="font-bold text-gray-800">{project.title}</h3>
+                                <p className="text-xs text-gray-500">{project.tokenTicker}</p>
+                            </div>
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(project.status)}`}>
+                                {project.status}
+                            </span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex justify-between"><span className="text-gray-500">Raised:</span> <span className="font-semibold">{formatCurrency(project.amountRaised)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Goal:</span> <span className="font-semibold">{formatCurrency(project.fundingGoal)}</span></div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t">
+                            <button onClick={() => onManageProject(project.id)} className="w-full text-center bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
+                                Manage Project
+                            </button>
+                        </div>
+                    </div>
+                )) : (
+                     <p className="text-center py-8 text-gray-500">You have not created any projects yet.</p>
+                )}
             </div>
         </div>
     );
@@ -4858,6 +4893,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
