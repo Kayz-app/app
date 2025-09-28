@@ -1692,22 +1692,34 @@ const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
         return { totalInvestment, portfolioValue, lifetimeApy, uniqueProjects };
     }, [userPortfolio.tokens]);
     
-    const recentActivities = [
-        { id: 1, type: 'Investment', project: 'Eko Atlantic Tower', amount: -10000, date: '2025-09-01' },
-        { id: 2, type: 'APY Claim', project: 'Lekki Pearl Residence', amount: 62.50, date: '2025-08-05' },
-        { id: 3, type: 'Deposit', project: 'USD Wallet', amount: 25000, date: '2025-07-15' },
-    ];
+    const recentActivities = useMemo(() => {
+        // Only show mock activities for the demo accounts. New users will see an empty list.
+        if (currentUser.email === 'investor@demo.com' || currentUser.email === 'buyer@demo.com') {
+            return [
+                { id: 1, type: 'Investment', project: 'Eko Atlantic Tower', amount: -10000, date: '2025-09-01' },
+                { id: 2, type: 'APY Claim', project: 'Lekki Pearl Residence', amount: 62.50, date: '2025-08-05' },
+                { id: 3, type: 'Deposit', project: 'USD Wallet', amount: 25000, date: '2025-07-15' },
+            ];
+        }
+        return [];
+    }, [currentUser.email]);
 
     const cryptoBalance = currentUser.wallet.usdt + currentUser.wallet.usdc;
 
-    const performanceData = [
-      { month: 'Apr', value: 13000 },
-      { month: 'May', value: 14500 },
-      { month: 'Jun', value: 14000 },
-      { month: 'Jul', value: 15500 },
-      { month: 'Aug', value: 17000 },
-      { month: 'Sep', value: 17500 },
-    ];
+    const performanceData = useMemo(() => {
+        // Only show mock performance data for demo accounts.
+        if (currentUser.email === 'investor@demo.com' || currentUser.email === 'buyer@demo.com') {
+            return [
+              { month: 'Apr', value: 13000 },
+              { month: 'May', value: 14500 },
+              { month: 'Jun', value: 14000 },
+              { month: 'Jul', value: 15500 },
+              { month: 'Aug', value: 17000 },
+              { month: 'Sep', value: 17500 },
+            ];
+        }
+        return [];
+    }, [currentUser.email]);
 
     const allocationData = useMemo(() => {
         const allocation = {};
@@ -1756,27 +1768,33 @@ const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
             <div className="bg-white p-6 rounded-lg shadow-md">
                  <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
                  <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <tbody>
-                            {recentActivities.map(activity => (
-                                <tr key={activity.id} className="border-b last:border-0">
-                                    <td className="py-3 px-2">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                                            {activity.amount > 0 ? <ArrowDownLeftIcon className="w-5 h-5 text-green-600"/> : <ArrowUpRightIcon className="w-5 h-5 text-red-600"/>}
-                                        </div>
-                                    </td>
-                                    <td className="py-3 px-2">
-                                        <p className="font-semibold text-gray-800">{activity.type}</p>
-                                        <p className="text-sm text-gray-500">{activity.project}</p>
-                                    </td>
-                                    <td className="py-3 px-2 text-right">
-                                        <p className={`font-semibold ${activity.amount > 0 ? 'text-green-600' : 'text-gray-800'}`}>{formatCurrency(activity.amount)}</p>
-                                        <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    { recentActivities.length > 0 ? (
+                        <table className="min-w-full">
+                            <tbody>
+                                {recentActivities.map(activity => (
+                                    <tr key={activity.id} className="border-b last:border-0">
+                                        <td className="py-3 px-2">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                                                {activity.amount > 0 ? <ArrowDownLeftIcon className="w-5 h-5 text-green-600"/> : <ArrowUpRightIcon className="w-5 h-5 text-red-600"/>}
+                                            </div>
+                                        </td>
+                                        <td className="py-3 px-2">
+                                            <p className="font-semibold text-gray-800">{activity.type}</p>
+                                            <p className="text-sm text-gray-500">{activity.project}</p>
+                                        </td>
+                                        <td className="py-3 px-2 text-right">
+                                            <p className={`font-semibold ${activity.amount > 0 ? 'text-green-600' : 'text-gray-800'}`}>{formatCurrency(activity.amount)}</p>
+                                            <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="text-center py-8 text-gray-500">
+                            <p>No recent activity to display.</p>
+                        </div>
+                    )}
                  </div>
             </div>
         </div>
@@ -4990,6 +5008,7 @@ export default function App() {
         </div>
     );
 }
+
 
 
 
