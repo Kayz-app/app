@@ -1111,6 +1111,15 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
                                 )}
                             </div>
                             
+                            {/* Mobile Total Balance Display */}
+                            <div className="sm:hidden">
+                                {currentUser.wallet && (
+                                    <div className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1.5 rounded-full">
+                                        {formatCurrency(totalBalance)}
+                                    </div>
+                                )}
+                            </div>
+                            
                             <div className="relative" ref={notificationContainerRef}>
                                 <button 
                                     onClick={() => setNotificationsOpen(prev => !prev)}
@@ -1262,16 +1271,16 @@ const HelpAndSupport = ({ currentUser }) => {
     return (
         <div className="max-w-4xl mx-auto">
              <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('FAQ')}
-                        className={`${activeTab === 'FAQ' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'FAQ' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         FAQ
                     </button>
                     <button
                         onClick={() => setActiveTab('Live Support')}
-                        className={`${activeTab === 'Live Support' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Live Support' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Live Support
                     </button>
@@ -2091,22 +2100,22 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }
     return (
         <div>
              <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('Properties')}
-                        className={`${activeTab === 'Properties' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Properties' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Properties
                     </button>
                     <button
                         onClick={() => setActiveTab('Secondary Market')}
-                        className={`${activeTab === 'Secondary Market' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Secondary Market' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Secondary Market
                     </button>
                     <button
                         onClick={() => setActiveTab('Currency Exchange')}
-                        className={`${activeTab === 'Currency Exchange' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Currency Exchange' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Currency Exchange
                     </button>
@@ -2124,16 +2133,16 @@ const InvestorWallet = ({ currentUser }) => {
         <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">My Wallet</h2>
             <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('Crypto')}
-                        className={`${activeTab === 'Crypto' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Crypto' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Crypto Wallet
                     </button>
                     <button
                         onClick={() => setActiveTab('Fiat')}
-                        className={`${activeTab === 'Fiat' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Fiat' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Fiat Wallet (NGN)
                     </button>
@@ -2167,16 +2176,16 @@ const InvestorSettings = ({ currentUser }) => {
         <div className="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Settings</h2>
             <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('KYC')}
-                        className={`${activeTab === 'KYC' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'KYC' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         KYC Verification
                     </button>
                     <button
                         onClick={() => setActiveTab('2FA')}
-                        className={`${activeTab === '2FA' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === '2FA' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Two-Factor Auth
                     </button>
@@ -3469,16 +3478,16 @@ const DeveloperWallet = ({ currentUser }) => {
             <h2 className="text-xl font-bold text-gray-800 mb-4">Operational Wallet</h2>
             <p className="text-sm text-gray-600 mb-6">This is your main wallet for funding project APY payments and managing company funds.</p>
             <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('Crypto')}
-                        className={`${activeTab === 'Crypto' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Crypto' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Crypto Wallet
                     </button>
                     <button
                         onClick={() => setActiveTab('Fiat')}
-                        className={`${activeTab === 'Fiat' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeTab === 'Fiat' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Fiat Wallet (NGN)
                     </button>
@@ -4282,17 +4291,17 @@ const AdminProjectApprovals = ({ projects, onUpdateProjectStatus }) => {
         <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Project Approvals</h2>
             <div className="mb-6 border-b border-gray-200">
-                <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+                <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
                     <button
                         onClick={() => setActiveSubTab('Pending')}
-                        className={`${activeSubTab === 'Pending' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeSubTab === 'Pending' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Pending Approvals
                         {pendingProjects.length > 0 && <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{pendingProjects.length}</span>}
                     </button>
                     <button
                         onClick={() => setActiveSubTab('Approved')}
-                        className={`${activeSubTab === 'Approved' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                        className={`${activeSubTab === 'Approved' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
                     >
                         Approved Projects
                     </button>
@@ -4923,6 +4932,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
