@@ -870,12 +870,63 @@ const LoginPage = ({ setPage, setCurrentUser, users }) => {
     );
 };
 
-const RegisterPage = ({ setPage }) => {
+const RegisterPage = ({ setPage, onRegister, users }) => {
     const [accountType, setAccountType] = useState('investor');
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleRegister = (e) => {
+        e.preventDefault();
+        setError('');
+
+        // Basic validation
+        if (!fullName || !email || !password || !confirmPassword) {
+            setError('All fields are required.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+        if (users[email]) {
+            setError('An account with this email already exists.');
+            return;
+        }
+
+        // Create new user object
+        const newUser = {
+            id: Object.keys(users).length + 1,
+            type: accountType,
+            name: fullName,
+            email: email,
+            password: password, // In a real app, this should be hashed on the backend
+            wallet: { ngn: 0, usdt: 0, usdc: 0 },
+            kycStatus: 'Not Submitted',
+            twoFactorEnabled: false,
+        };
+
+        if (accountType === 'developer') {
+            newUser.companyProfile = {
+                name: '',
+                regNumber: '',
+                address: '',
+                website: '',
+            };
+            newUser.treasuryAddress = '';
+        }
+
+        onRegister(newUser);
+        alert('Registration successful! Please log in to continue.');
+        setPage('login');
+    };
 
     return (
         <AuthPage title="Create a new account" setPage={setPage}>
-             <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+             <form className="space-y-6" onSubmit={handleRegister}>
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Register as</label>
                     <div className="mt-1 grid grid-cols-2 gap-2">
@@ -907,19 +958,19 @@ const RegisterPage = ({ setPage }) => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                    <input type="text" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                    <input type="text" required value={fullName} onChange={e => setFullName(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Email address</label>
-                    <input type="email" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 </div>
                  <div>
                     <label className="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-                    <input type="password" required className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                    <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
                 </div>
                  <div>
                     <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Account</button>
@@ -3990,8 +4041,7 @@ const AdminCompliance = ({ users }) => {
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-gray-800 mb-4">KYC/AML Compliance Queue</h2>
-            {/* Desktop Table */}
-            <div className="overflow-x-auto hidden md:block">
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -4025,31 +4075,6 @@ const AdminCompliance = ({ users }) => {
                         )}
                     </tbody>
                 </table>
-            </div>
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-                 {pendingKycUsers.length > 0 ? pendingKycUsers.map(user => (
-                    <div key={user.id} className="bg-gray-50 p-4 rounded-lg border">
-                        <div className="flex justify-between items-start mb-3 pb-3 border-b">
-                             <div>
-                                <h3 className="font-bold text-gray-800">{user.name}</h3>
-                                <p className="text-xs text-gray-500">{user.email}</p>
-                            </div>
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                user.kycStatus === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                                {user.kycStatus}
-                            </span>
-                        </div>
-                         <div className="mt-4 flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0 text-sm">
-                             <button onClick={() => alert('Viewing documents for ' + user.name)} className="flex-1 text-center text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-md font-medium hover:bg-indigo-100">View Docs</button>
-                             <button onClick={() => handleReject(user.id)} className="flex-1 bg-red-500 text-white px-3 py-2 rounded-md font-medium hover:bg-red-600">Reject</button>
-                             <button onClick={() => handleApprove(user.id)} className="flex-1 bg-green-500 text-white px-3 py-2 rounded-md font-medium hover:bg-green-600">Approve</button>
-                        </div>
-                    </div>
-                )) : (
-                    <p className="text-center py-8 text-gray-500">No users are pending KYC verification.</p>
-                )}
             </div>
         </div>
     );
@@ -4244,127 +4269,73 @@ const AdminProjectApprovals = ({ projects, onUpdateProjectStatus }) => {
     const approvedProjects = projects.filter(p => ['active', 'funded', 'completed'].includes(p.status));
 
     const renderPendingTable = () => (
-        <>
-            {/* Desktop Table */}
-            <div className="overflow-x-auto hidden md:block">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Developer</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding Goal</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {pendingProjects.map(project => (
-                            <tr key={project.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.developerName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.fundingGoal)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button onClick={() => setViewingProject(project)} className="text-indigo-600 hover:text-indigo-900">View Details</button>
-                                </td>
-                            </tr>
-                        ))}
-                        {pendingProjects.length === 0 && (
-                            <tr><td colSpan="4" className="text-center py-8 text-gray-500">No projects are pending approval.</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-             {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-                {pendingProjects.length > 0 ? pendingProjects.map(project => (
-                    <div key={project.id} className="bg-gray-50 p-4 rounded-lg border">
-                        <div className="flex justify-between items-center mb-3 pb-3 border-b">
-                            <div>
-                                <h3 className="font-bold text-gray-800">{project.title}</h3>
-                                <p className="text-xs text-gray-500">{project.developerName}</p>
-                            </div>
-                            <span className="font-semibold text-indigo-600">{formatCurrency(project.fundingGoal)}</span>
-                        </div>
-                        <button onClick={() => setViewingProject(project)} className="w-full bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
-                            View Details
-                        </button>
-                    </div>
-                )) : (
-                    <p className="text-center py-8 text-gray-500">No projects are pending approval.</p>
-                )}
-            </div>
-        </>
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Developer</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding Goal</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                     {pendingProjects.map(project => (
+                         <tr key={project.id}>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.developerName}</td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.fundingGoal)}</td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                 <button onClick={() => setViewingProject(project)} className="text-indigo-600 hover:text-indigo-900">View Details</button>
+                             </td>
+                         </tr>
+                    ))}
+                    {pendingProjects.length === 0 && (
+                         <tr><td colSpan="4" className="text-center py-8 text-gray-500">No projects are pending approval.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
     );
 
     const renderApprovedTable = () => (
-         <>
-            {/* Desktop Table */}
-            <div className="overflow-x-auto hidden md:block">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Developer</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding Progress</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {approvedProjects.map(project => (
-                            <tr key={project.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.developerName}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.amountRaised)} / {formatCurrency(project.fundingGoal)}</td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        project.status === 'active' ? 'bg-green-100 text-green-800' :
-                                        project.status === 'funded' ? 'bg-blue-100 text-blue-800' :
-                                        'bg-gray-100 text-gray-800'
-                                    }`}>
-                                        {project.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button onClick={() => setViewingProject(project)} className="text-indigo-600 hover:text-indigo-900">Monitor</button>
-                                </td>
-                            </tr>
-                        ))}
-                        {approvedProjects.length === 0 && (
-                            <tr><td colSpan="5" className="text-center py-8 text-gray-500">No projects have been approved yet.</td></tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-                {approvedProjects.length > 0 ? approvedProjects.map(project => (
-                    <div key={project.id} className="bg-gray-50 p-4 rounded-lg border">
-                        <div className="flex justify-between items-start mb-3 pb-3 border-b">
-                            <div>
-                                <h3 className="font-bold text-gray-800">{project.title}</h3>
-                                <p className="text-xs text-gray-500">{project.developerName}</p>
-                            </div>
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                project.status === 'active' ? 'bg-green-100 text-green-800' :
-                                project.status === 'funded' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
-                            }`}>
-                                {project.status}
-                            </span>
-                        </div>
-                        <div className="text-sm text-gray-600 mb-4">
-                            <span>Funding: </span>
-                            <span className="font-semibold">{formatCurrency(project.amountRaised)} / {formatCurrency(project.fundingGoal)}</span>
-                        </div>
-                        <button onClick={() => setViewingProject(project)} className="w-full bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700">
-                            Monitor
-                        </button>
-                    </div>
-                )) : (
-                    <p className="text-center py-8 text-gray-500">No projects have been approved yet.</p>
-                )}
-            </div>
-        </>
+         <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Developer</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding Progress</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                     {approvedProjects.map(project => (
+                         <tr key={project.id}>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.developerName}</td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(project.amountRaised)} / {formatCurrency(project.fundingGoal)}</td>
+                             <td className="px-6 py-4 whitespace-nowrap">
+                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                     project.status === 'active' ? 'bg-green-100 text-green-800' :
+                                     project.status === 'funded' ? 'bg-blue-100 text-blue-800' :
+                                     'bg-gray-100 text-gray-800'
+                                 }`}>
+                                     {project.status}
+                                 </span>
+                             </td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                 <button onClick={() => setViewingProject(project)} className="text-indigo-600 hover:text-indigo-900">Monitor</button>
+                             </td>
+                         </tr>
+                    ))}
+                    {approvedProjects.length === 0 && (
+                         <tr><td colSpan="4" className="text-center py-8 text-gray-500">No projects have been approved yet.</td></tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
     );
 
     return (
@@ -4549,8 +4520,7 @@ const AdminUserManagement = ({ users }) => {
     return (
         <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-gray-800 mb-4">User Management</h2>
-            {/* Desktop Table */}
-            <div className="overflow-x-auto hidden md:block">
+            <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                      <thead className="bg-gray-50">
                         <tr>
@@ -4573,23 +4543,6 @@ const AdminUserManagement = ({ users }) => {
                         ))}
                     </tbody>
                 </table>
-            </div>
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-                {Object.values(users).map(user => (
-                    <div key={user.id} className="bg-gray-50 p-4 rounded-lg border">
-                        <div className="flex justify-between items-center mb-3 pb-3 border-b">
-                            <div>
-                                <h3 className="font-bold text-gray-800">{user.name}</h3>
-                                <p className="text-xs text-gray-500">{user.email}</p>
-                            </div>
-                            <span className="text-sm font-semibold capitalize bg-gray-200 text-gray-700 px-2 py-1 rounded-full">{user.type}</span>
-                        </div>
-                        <button className="w-full text-center text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-100">
-                            View Details
-                        </button>
-                    </div>
-                ))}
             </div>
         </div>
     );
@@ -4832,6 +4785,13 @@ export default function App() {
         localStorage.removeItem('kayzeraUser');
     };
 
+    const handleRegisterUser = (newUser) => {
+        setUsers(prevUsers => ({
+            ...prevUsers,
+            [newUser.email]: newUser
+        }));
+    };
+
     const handleUpdateProjectStatus = (projectId, newStatus) => {
         setProjects(prevProjects =>
             prevProjects.map(p =>
@@ -5007,7 +4967,7 @@ export default function App() {
 
         switch (page) {
             case 'login': return <LoginPage setPage={setPage} setCurrentUser={setCurrentUser} users={users} />;
-            case 'register': return <RegisterPage setPage={setPage} />;
+            case 'register': return <RegisterPage setPage={setPage} onRegister={handleRegisterUser} users={users} />;
             case 'forgotPassword': return <ForgotPasswordPage setPage={setPage} />;
             case 'company': return <CompanyPage setPage={setPage} />;
             case 'landing':
