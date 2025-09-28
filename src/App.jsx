@@ -58,7 +58,7 @@ const initialProjects = [
     amountRaised: 250000, // Fully funded
     apy: 15,
     term: 24, // months
-    startDate: '2024-03-01T00:00:00Z',
+    startDate: '2022-03-01T00:00:00Z', // MODIFIED: Set date to the past so term has ended
     description: 'A premium residential complex featuring 50 luxury apartments with state-of-the-art facilities. Located in the heart of Lekki, it promises high rental yield and capital appreciation. The property includes a swimming pool, a fully-equipped gym, and 24/7 security.',
     imageUrl: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2000',
     images: [
@@ -71,7 +71,6 @@ const initialProjects = [
     projectWalletBalance: 5000, // For APY payments
     completionDate: '2024-05-15T00:00:00Z',
     fundsWithdrawn: true,
-    featured: true,
   },
   {
     id: 2,
@@ -96,7 +95,6 @@ const initialProjects = [
     status: 'active',
     projectWalletBalance: 12000,
     fundsWithdrawn: false,
-    featured: true,
   },
   {
     id: 3,
@@ -120,7 +118,6 @@ const initialProjects = [
     status: 'active',
     projectWalletBalance: 0,
     fundsWithdrawn: false,
-    featured: true,
   },
   {
     id: 4,
@@ -144,7 +141,6 @@ const initialProjects = [
     status: 'pending', // Submitted for admin approval
     projectWalletBalance: 0,
     fundsWithdrawn: false,
-    featured: false,
   },
 ];
 
@@ -355,10 +351,6 @@ const ChevronDownIcon = (props) => (
 );
 const PaperclipIcon = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-);
-
-const XCircleIcon = (props) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
 );
 
 const DownloadLogoButton = () => {
@@ -717,7 +709,7 @@ const LandingPage = ({ setPage, projects }) => {
                             <p className="mt-2 text-lg text-gray-600">Carefully vetted projects from reputable developers.</p>
                         </div>
                         <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-                            {projects.filter(p => p.featured && (p.status === 'active' || p.status === 'funded')).slice(0, 3).map(project => (
+                            {projects.filter(p => p.status === 'active' || p.status === 'funded').slice(0, 3).map(project => (
                                  <ProjectCard key={project.id} project={project} setPage={setPage} />
                             ))}
                         </div>
@@ -1652,7 +1644,7 @@ const AssetAllocationChart = ({ data }) => {
 };
 
 
-const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, totalBalance }) => {
+const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, onRedeemPrincipal, totalBalance }) => {
     const [activeItem, setActiveItem] = useState('Dashboard');
 
     const sidebarItems = [
@@ -1669,7 +1661,7 @@ const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, 
 
         switch (activeItem) {
             case 'Dashboard': return <InvestorDashboardOverview currentUser={currentUser} projects={projects} portfolios={portfolios} />;
-            case 'My Tokens': return <InvestorMyTokens currentUser={currentUser} projects={projects} portfolios={portfolios} onClaimApy={onClaimApy} onListToken={onListToken} />;
+            case 'My Tokens': return <InvestorMyTokens currentUser={currentUser} projects={projects} portfolios={portfolios} onClaimApy={onClaimApy} onListToken={onListToken} onRedeemPrincipal={onRedeemPrincipal} />;
             case 'Marketplace': return <InvestorMarketplace currentUser={currentUser} marketListings={marketListings} projects={projects} onInvest={onInvest} />;
             case 'My Wallet': 
                 return isKycVerified 
@@ -1779,44 +1771,11 @@ const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
                      </div>
                 </div>
             </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                 <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
-                 <div className="overflow-x-auto">
-                    { recentActivities.length > 0 ? (
-                        <table className="min-w-full">
-                            <tbody>
-                                {recentActivities.map(activity => (
-                                    <tr key={activity.id} className="border-b last:border-0">
-                                        <td className="py-3 px-2">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                                                {activity.amount > 0 ? <ArrowDownLeftIcon className="w-5 h-5 text-green-600"/> : <ArrowUpRightIcon className="w-5 h-5 text-red-600"/>}
-                                            </div>
-                                        </td>
-                                        <td className="py-3 px-2">
-                                            <p className="font-semibold text-gray-800">{activity.type}</p>
-                                            <p className="text-sm text-gray-500">{activity.project}</p>
-                                        </td>
-                                        <td className="py-3 px-2 text-right">
-                                            <p className={`font-semibold ${activity.amount > 0 ? 'text-green-600' : 'text-gray-800'}`}>{formatCurrency(activity.amount)}</p>
-                                            <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleDateString()}</p>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div className="text-center py-8 text-gray-500">
-                            <p>No recent activity to display.</p>
-                        </div>
-                    )}
-                 </div>
-            </div>
         </div>
     );
 };
 
-const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onListToken }) => {
+const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onListToken, onRedeemPrincipal }) => {
     const userPortfolio = portfolios[currentUser.id] || { tokens: [] };
     const [listModalOpen, setListModalOpen] = useState(false);
     const [tokenToList, setTokenToList] = useState(null);
@@ -1835,6 +1794,30 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
         onListToken(listingDetails);
         handleCloseListModal();
     };
+
+    const groupedTokens = useMemo(() => {
+        const groups = {};
+        if (userPortfolio.tokens) {
+            userPortfolio.tokens.forEach(token => {
+                const project = projects.find(p => p.id === token.projectId);
+                if (!project) return;
+
+                if (!groups[token.projectId]) {
+                    groups[token.projectId] = {
+                        project: project,
+                        securityToken: null,
+                        marketToken: null,
+                    };
+                }
+                if (token.type === 'SECURITY') {
+                    groups[token.projectId].securityToken = token;
+                } else if (token.type === 'MARKET') {
+                    groups[token.projectId].marketToken = token;
+                }
+            });
+        }
+        return Object.values(groups);
+    }, [userPortfolio.tokens, projects]);
     
     return (
         <>
@@ -1846,137 +1829,193 @@ const InvestorMyTokens = ({ currentUser, projects, portfolios, onClaimApy, onLis
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Token Type</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tokens Held</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value (USD)</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">APY</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lockup / Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Security Tokens (Value)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Tokens (Status)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lockup Ends</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {userPortfolio.tokens.length > 0 && userPortfolio.tokens.map(token => {
-                                 const project = projects.find(p => p.id === token.projectId);
-                                 if (!project) return null;
-
-                                 const isSecurityToken = token.type === 'SECURITY';
-                                 let endDate;
-                                 let canClaimApy = false;
-
-                                 if (isSecurityToken) {
-                                     const startDate = new Date(project.startDate);
-                                     endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
-                                     
-                                     const lastClaimDate = new Date(token.lastApyClaimDate);
-                                     const now = new Date();
-                                     // Allow claim if the current month is after the last claimed month.
-                                     if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
-                                         canClaimApy = true;
-                                     }
-                                 }
-                                 
-                                 return (
-                                     <tr key={token.tokenId}>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.title} ({project.tokenTicker})</td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isSecurityToken ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                                 {token.type}
-                                             </span>
-                                         </td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">{token.amount.toLocaleString()}</td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-semibold">{formatCurrency(token.amount)}</td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">{project.apy}%</td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                             {isSecurityToken && endDate ? <LockupTimer endDate={endDate} /> : <span className="text-gray-500 capitalize">{token.status}</span>}
-                                         </td>
-                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                             {isSecurityToken ? (
-                                                <button 
-                                                    disabled={!canClaimApy || currentUser.kycStatus !== 'Verified'} 
-                                                    onClick={() => onClaimApy(token.tokenId, currentUser.id)}
-                                                    className="bg-green-500 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            {groupedTokens.length > 0 ? groupedTokens.map(({ project, securityToken, marketToken }) => {
+                                const startDate = new Date(project.startDate);
+                                const endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
+                                const isTermEnded = new Date() > endDate;
+                                
+                                let canClaimApy = false;
+                                if (securityToken) {
+                                    const lastClaimDate = new Date(securityToken.lastApyClaimDate);
+                                    const now = new Date();
+                                    if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
+                                        canClaimApy = true;
+                                    }
+                                }
+                                
+                                return (
+                                    <tr key={project.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-gray-900">{project.title}</div>
+                                            <div className="text-xs text-gray-500">{project.tokenTicker}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">{project.apy}%</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {securityToken ? (
+                                                <>
+                                                    <div>{securityToken.amount.toLocaleString()}</div>
+                                                    <div className="text-xs text-gray-500">{formatCurrency(securityToken.amount)}</div>
+                                                </>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {marketToken ? (
+                                                <>
+                                                    <div>{marketToken.amount.toLocaleString()}</div>
+                                                    <div className="text-xs capitalize">{marketToken.status}</div>
+                                                </>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {securityToken && <LockupTimer endDate={endDate} />}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            {isTermEnded && securityToken ? (
+                                                <button
+                                                    onClick={() => onRedeemPrincipal(currentUser.id, project.id)}
+                                                    disabled={currentUser.kycStatus !== 'Verified'}
+                                                    className="bg-blue-600 text-white px-2 py-1 rounded-md text-xs font-medium hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed w-28 text-center"
                                                 >
-                                                    {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Claim APY'}
+                                                    {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Redeem Principal'}
                                                 </button>
-                                             ) : (
-                                                <button 
-                                                    onClick={() => handleOpenListModal(token)}
-                                                    className="text-indigo-600 hover:text-indigo-900 text-xs font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
-                                                    disabled={token.status === 'listed' || currentUser.kycStatus !== 'Verified'}
-                                                >
-                                                    {currentUser.kycStatus !== 'Verified' ? 'Verify KYC to List' : token.status === 'listed' ? 'Listed' : 'List for Sale'}
-                                                </button>
-                                             )}
-                                         </td>
-                                     </tr>
-                                 );
-                            })}
+                                            ) : (
+                                                <div className="flex flex-col space-y-2">
+                                                    {securityToken && (
+                                                        <button 
+                                                            disabled={!canClaimApy || currentUser.kycStatus !== 'Verified'} 
+                                                            onClick={() => onClaimApy(securityToken.tokenId, currentUser.id)}
+                                                            className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed w-28 text-center"
+                                                        >
+                                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Claim APY'}
+                                                        </button>
+                                                    )}
+                                                    {marketToken && (
+                                                        <button 
+                                                            onClick={() => handleOpenListModal(marketToken)}
+                                                            className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-md text-xs font-medium hover:bg-indigo-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed w-28 text-center"
+                                                            disabled={marketToken.status === 'listed' || currentUser.kycStatus !== 'Verified'}
+                                                        >
+                                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : marketToken.status === 'listed' ? 'Listed' : 'List for Sale'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            }) : (
+                                <tr>
+                                    <td colSpan="6" className="text-center py-8 text-gray-500">You do not own any tokens yet.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
-                     {userPortfolio.tokens.length === 0 && (
-                        <p className="text-center py-8 text-gray-500">You do not own any tokens yet.</p>
-                    )}
                 </div>
 
                 {/* Mobile Cards */}
                 <div className="md:hidden space-y-4">
-                    {userPortfolio.tokens.length > 0 ? userPortfolio.tokens.map(token => {
-                        const project = projects.find(p => p.id === token.projectId);
-                        if (!project) return null;
-                        const isSecurityToken = token.type === 'SECURITY';
-                        let endDate;
+                    {groupedTokens.length > 0 ? groupedTokens.map(({ project, securityToken, marketToken }) => {
+                        const startDate = new Date(project.startDate);
+                        const endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
+                        const isTermEnded = new Date() > endDate;
+                        
                         let canClaimApy = false;
-
-                        if (isSecurityToken) {
-                             const startDate = new Date(project.startDate);
-                             endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
-                             const lastClaimDate = new Date(token.lastApyClaimDate);
-                             const now = new Date();
-                             if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
-                                 canClaimApy = true;
-                             }
+                        if (securityToken) {
+                            const lastClaimDate = new Date(securityToken.lastApyClaimDate);
+                            const now = new Date();
+                            if (endDate > now && (now.getFullYear() > lastClaimDate.getFullYear() || now.getMonth() > lastClaimDate.getMonth())) {
+                                canClaimApy = true;
+                            }
                         }
-
+                        
                         return (
-                            <div key={token.tokenId} className="bg-gray-50 p-4 rounded-lg border">
+                            <div key={project.id} className="bg-gray-50 p-4 rounded-lg border">
                                 <div className="flex justify-between items-center mb-3 pb-3 border-b">
                                     <div>
                                         <h3 className="font-bold text-gray-800">{project.title}</h3>
-                                        <p className="text-xs text-gray-500">{project.tokenTicker}</p>
+                                        <p className="text-xs text-gray-500">{project.tokenTicker} - {project.apy}% APY</p>
                                     </div>
-                                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${isSecurityToken ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                        {token.type}
-                                    </span>
+                                    <div className="text-right text-xs text-gray-500">
+                                        <span>Lockup Ends:</span>
+                                        {securityToken && <LockupTimer endDate={endDate} />}
+                                    </div>
                                 </div>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span className="text-gray-500">Amount:</span> <span className="font-semibold">{token.amount.toLocaleString()}</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-500">Value (USD):</span> <span className="font-semibold">{formatCurrency(token.amount)}</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-500">APY:</span> <span className="font-semibold text-green-600">{project.apy}%</span></div>
-                                    <div className="flex justify-between items-center"><span className="text-gray-500">Status:</span> <span>{isSecurityToken && endDate ? <LockupTimer endDate={endDate} /> : <span className="text-gray-500 capitalize">{token.status}</span>}</span></div>
-                                </div>
-                                <div className="mt-4 pt-4 border-t">
-                                     {isSecurityToken ? (
-                                        <button 
-                                            disabled={!canClaimApy || currentUser.kycStatus !== 'Verified'} 
-                                            onClick={() => onClaimApy(token.tokenId, currentUser.id)}
-                                            className="w-full bg-green-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                        >
-                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Claim APY'}
-                                        </button>
-                                     ) : (
-                                        <button 
-                                            onClick={() => handleOpenListModal(token)}
-                                            className="w-full text-center text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100"
-                                            disabled={token.status === 'listed' || currentUser.kycStatus !== 'Verified'}
-                                        >
-                                            {currentUser.kycStatus !== 'Verified' ? 'Verify KYC to List' : token.status === 'listed' ? 'Listed' : 'List for Sale'}
-                                        </button>
-                                     )}
+                                
+                                <div className="space-y-3">
+                                    {isTermEnded && securityToken ? (
+                                       <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                                           <div className="flex justify-between items-center text-sm">
+                                               <span className="font-semibold text-blue-800">Investment Complete</span>
+                                               <div>
+                                                   <p className="font-bold">{securityToken.amount.toLocaleString()}</p>
+                                                   <p className="text-xs text-right text-gray-500">{formatCurrency(securityToken.amount)}</p>
+                                               </div>
+                                           </div>
+                                           <button 
+                                               onClick={() => onRedeemPrincipal(currentUser.id, project.id)}
+                                               disabled={currentUser.kycStatus !== 'Verified'}
+                                               className="mt-2 w-full bg-blue-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                           >
+                                               {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Redeem Principal'}
+                                           </button>
+                                       </div>
+                                    ) : (
+                                        <>
+                                            {securityToken && (
+                                                <div className="p-3 bg-green-50 rounded-md border border-green-200">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="font-semibold text-green-800">Security Tokens (APY)</span>
+                                                        <div>
+                                                            <p className="font-bold">{securityToken.amount.toLocaleString()}</p>
+                                                            <p className="text-xs text-right text-gray-500">{formatCurrency(securityToken.amount)}</p>
+                                                        </div>
+                                                    </div>
+                                                     <button 
+                                                        disabled={!canClaimApy || currentUser.kycStatus !== 'Verified'} 
+                                                        onClick={() => onClaimApy(securityToken.tokenId, currentUser.id)}
+                                                        className="mt-2 w-full text-center text-green-800 bg-green-100 border border-green-200 px-3 py-2 rounded-md text-sm font-medium hover:bg-green-200 disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                                    >
+                                                        {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : 'Claim APY'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                            {marketToken && (
+                                                <div className="p-3 bg-indigo-50 rounded-md border border-indigo-200">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="font-semibold text-indigo-800">Market Tokens</span>
+                                                        <div>
+                                                            <p className="font-bold">{marketToken.amount.toLocaleString()}</p>
+                                                            <p className="text-xs text-right capitalize text-gray-500">{marketToken.status}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleOpenListModal(marketToken)}
+                                                        className="mt-2 w-full text-center text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100"
+                                                        disabled={marketToken.status === 'listed' || currentUser.kycStatus !== 'Verified'}
+                                                    >
+                                                        {currentUser.kycStatus !== 'Verified' ? 'Verify KYC' : marketToken.status === 'listed' ? 'Listed' : 'List for Sale'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                        )
+                        );
                     }) : (
-                         <p className="text-center py-8 text-gray-500">You do not own any tokens yet.</p>
+                        <p className="text-center py-8 text-gray-500">You do not own any tokens yet.</p>
                     )}
                 </div>
             </div>
@@ -2175,7 +2214,7 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }
             case 'Properties':
                 return <PropertiesMarket projects={projects} currentUser={currentUser} onInvest={onInvest} />;
             case 'Currency Exchange':
-                return <CurrencyExchange currentUser={currentUser} />;
+                return <CurrencyExchange />;
             default:
                 return null;
         }
@@ -2540,32 +2579,6 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
         return `${name.substring(0, 2)}***${name.substring(name.length - 2)}`;
     };
 
-    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
-    const listingsToShow = useMemo(() => {
-        if (!isDemoUser) return []; // For new users, show empty market initially
-        return marketListings;
-    }, [marketListings, isDemoUser]);
-
-    const emptyState = (colSpan = 6) => (
-         <tr className="bg-white">
-            <td colSpan={colSpan} className="text-center py-8 px-4">
-                 <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
-                    <TrendingUpIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">Secondary Market is Empty</h3>
-                    <p className="mt-1 text-sm text-gray-500">There are currently no tokens listed for sale. Please check back later.</p>
-                </div>
-            </td>
-        </tr>
-    );
-
-    const emptyStateMobile = () => (
-         <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
-            <TrendingUpIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Secondary Market is Empty</h3>
-            <p className="mt-1 text-sm text-gray-500">There are currently no tokens listed for sale. Please check back later.</p>
-        </div>
-    );
-
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Secondary Market Listings</h2>
@@ -2583,7 +2596,7 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {listingsToShow.length > 0 ? listingsToShow.map(listing => {
+                        {marketListings.map(listing => {
                             const project = projects.find(p => p.id === listing.projectId);
                             // Mock finding seller name
                              const sellerName = Object.values(initialUsers).find(u => u.id === listing.sellerId)?.name || 'Unknown';
@@ -2605,13 +2618,16 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                                      </td>
                                  </tr>
                              );
-                        }) : emptyState(6)}
+                        })}
+                        {marketListings.length === 0 && (
+                            <tr><td colSpan="6" className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</td></tr>
+                        )}
                     </tbody>
                 </table>
             </div>
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-                 {listingsToShow.length > 0 ? listingsToShow.map(listing => {
+                 {marketListings.length > 0 ? marketListings.map(listing => {
                     const project = projects.find(p => p.id === listing.projectId);
                     const sellerName = Object.values(initialUsers).find(u => u.id === listing.sellerId)?.name || 'Unknown';
                     const pricePerToken = listing.amount > 0 ? listing.price / listing.amount : 0;
@@ -2640,7 +2656,7 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                         </div>
                     );
                 }) : (
-                    emptyStateMobile()
+                     <p className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</p>
                 )}
             </div>
         </div>
@@ -2662,29 +2678,15 @@ const PropertiesMarket = ({ projects, currentUser, onInvest }) => {
         return <ProjectDetailsPage project={selectedProject} onBack={handleBack} currentUser={currentUser} onInvest={onInvest} />;
     }
     
-    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
-
-    const activeProjects = useMemo(() => {
-        if (!isDemoUser) return []; // For new users, show empty marketplace initially
-        return projects.filter(p => p.status === 'active' || p.status === 'funded');
-    }, [projects, isDemoUser]);
-    
+    const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'funded');
     return (
         <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">Available Properties for Investment</h2>
-            {activeProjects.length > 0 ? (
-                <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-                    {activeProjects.map(project => (
-                        <ProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
-                    ))}
-                </div>
-            ) : (
-                 <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
-                    <BuildingIcon className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No Properties Available</h3>
-                    <p className="mt-1 text-sm text-gray-500">There are currently no properties available for investment. Please check back later.</p>
-                </div>
-            )}
+            <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
+                {activeProjects.map(project => (
+                    <ProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
+                ))}
+            </div>
         </div>
     );
 };
@@ -2979,73 +2981,98 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
 };
 
 
-const CurrencyExchange = ({ currentUser }) => {
-    const [exchangeRate, setExchangeRate] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+const InvestmentModal = ({ isOpen, onClose, onConfirm, project, details }) => {
+    const [status, setStatus] = useState('confirm'); // confirm, processing, success, error
+
+    const handleConfirm = () => {
+        setStatus('processing');
+        // Simulate network request
+        setTimeout(() => {
+            try {
+                onConfirm();
+                setStatus('success');
+            } catch (e) {
+                setStatus('error');
+            }
+        }, 2000);
+    };
+
+    const handleClose = () => {
+        onClose();
+        // Reset status for next time modal opens
+        setTimeout(() => setStatus('confirm'), 300);
+    };
+
+    if (!isOpen) return null;
+
+    const renderContent = () => {
+        switch (status) {
+            case 'processing':
+                return (
+                    <div className="text-center py-8">
+                        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <h4 className="font-semibold text-lg text-gray-800">Processing Transaction</h4>
+                        <p className="text-gray-600">Please wait while we confirm your investment on the blockchain...</p>
+                    </div>
+                );
+            case 'success':
+                return (
+                     <div className="text-center py-8">
+                        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-gray-800">Investment Successful!</h4>
+                        <p className="text-gray-600">Congratulations! You are now a fractional owner of {project.title}.</p>
+                        <button onClick={handleClose} className="mt-6 bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700">View My Tokens</button>
+                    </div>
+                );
+            case 'error':
+                 return (
+                     <div className="text-center py-8">
+                        <XIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-red-600">Investment Failed</h4>
+                        <p className="text-gray-600">Something went wrong. Please try again.</p>
+                        <button onClick={handleClose} className="mt-6 bg-gray-200 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-300">Close</button>
+                    </div>
+                );
+            case 'confirm':
+            default:
+                return (
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Your Investment</h3>
+                        <p className="text-gray-600 mb-4">You are about to invest in <strong>{project.title}</strong>. Please review the details below.</p>
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm border">
+                            <div className="flex justify-between"><span className="text-gray-600">Investment Amount:</span><span className="font-medium">{formatCurrency(details.numericInvestmentAmount)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">Platform Fee (1.5%):</span><span className="font-medium">{formatCurrency(details.fee)}</span></div>
+                            <div className="flex justify-between border-t mt-2 pt-2"><span className="font-bold">Total Debit:</span><span className="font-bold">{formatCurrency(details.totalDebit)}</span></div>
+                            <hr className="my-2"/>
+                            <div className="flex justify-between"><span className="text-gray-600">Tokens to Receive:</span><span className="font-bold text-indigo-600">{details.tokensToReceive.toLocaleString(undefined, { maximumFractionDigits: 2 })} {project.tokenTicker}</span></div>
+                        </div>
+                        <div className="mt-6 flex justify-end space-x-3">
+                            <button onClick={handleClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Cancel</button>
+                            <button onClick={handleConfirm} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Confirm Investment</button>
+                        </div>
+                    </div>
+                );
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                <div className="p-6">
+                    {renderContent()}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const CurrencyExchange = () => {
+    const USD_NGN_RATE = 1500;
     const [fromAmount, setFromAmount] = useState('150,000');
-    const [toAmount, setToAmount] = useState('');
+    const [toAmount, setToAmount] = useState('100.00');
     const [fromCurrency, setFromCurrency] = useState('NGN');
     const [toCurrency, setToCurrency] = useState('USDT');
-
-    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
-
-    // Mock backend fetch function
-    const fetchExchangeRate = async () => {
-        console.log("Simulating backend fetch for real-time exchange rate...");
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const rate = 1480 + Math.random() * 50; // Dynamic rate e.g., 1480-1530
-                resolve({ rate: rate });
-            }, 1500); // 1.5 second delay
-        });
-    };
-    
-    useEffect(() => {
-        if (isDemoUser) {
-            setExchangeRate(1500); // Use mock rate for demo users
-            setIsLoading(false);
-        } else {
-            // Fetch rate for new users
-            setIsLoading(true);
-            setError(null);
-            fetchExchangeRate()
-                .then(data => {
-                    setExchangeRate(data.rate);
-                    setFromAmount(''); // Clear default amount for new users
-                })
-                .catch(err => {
-                    console.error("Failed to fetch exchange rate", err);
-                    setError("Could not load the latest exchange rate. Please try again later.");
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        }
-    }, [isDemoUser]);
-
-    useEffect(() => {
-        if (!exchangeRate) {
-            setToAmount('');
-            return;
-        }
-
-        const numericFrom = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
-        if (numericFrom === 0) {
-            setToAmount('');
-            return;
-        }
-
-        let newToAmount;
-        if (fromCurrency === 'NGN') { // NGN -> Crypto
-            newToAmount = (numericFrom / exchangeRate).toFixed(2);
-        } else { // Crypto -> NGN
-            newToAmount = numericFrom * exchangeRate;
-            newToAmount = newToAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
-        }
-        setToAmount(newToAmount);
-
-    }, [fromAmount, fromCurrency, toCurrency, exchangeRate]);
 
     const handleSwapCurrencies = () => {
         const oldFromAmount = fromAmount;
@@ -3056,6 +3083,24 @@ const CurrencyExchange = ({ currentUser }) => {
         setFromCurrency(toCurrency);
         setToCurrency(oldFromCurrency);
     };
+
+    useEffect(() => {
+        const numericFrom = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
+        if (numericFrom === 0) {
+            setToAmount('');
+            return;
+        }
+
+        let newToAmount;
+        if (fromCurrency === 'NGN') { // NGN -> Crypto
+            newToAmount = (numericFrom / USD_NGN_RATE).toFixed(2);
+        } else { // Crypto -> NGN
+            newToAmount = numericFrom * USD_NGN_RATE;
+            newToAmount = newToAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
+        }
+        setToAmount(newToAmount);
+
+    }, [fromAmount, fromCurrency, toCurrency]);
 
     const handleFromAmountChange = (e) => {
         let value = e.target.value;
@@ -3093,71 +3138,57 @@ const CurrencyExchange = ({ currentUser }) => {
     return (
         <div className="bg-white p-8 rounded-lg shadow-md max-w-xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Exchange NGN & Crypto</h2>
-            
-            {isLoading ? (
-                <div className="text-center py-16">
-                    <div className="w-8 h-8 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-gray-500">Fetching latest exchange rates...</p>
-                </div>
-            ) : error ? (
-                <div className="text-center py-16">
-                    <XCircleIcon className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                    <p className="text-red-600 font-semibold">Error Loading Data</p>
-                    <p className="text-gray-600 mt-2">{error}</p>
-                </div>
-            ) : (
-                <div className="space-y-2">
-                    {/* From Field */}
-                    <div className="p-4 border rounded-lg">
-                         <label className="text-sm font-medium text-gray-500">You Pay</label>
-                         <div className="flex items-center">
-                            <input 
-                                type="text" 
-                                value={fromAmount}
-                                onChange={handleFromAmountChange}
-                                className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent"
-                                placeholder="0"
-                            />
-                            {renderCurrencySelector(fromCurrency, setFromCurrency)}
-                        </div>
+            <div className="space-y-2">
+                {/* From Field */}
+                <div className="p-4 border rounded-lg">
+                     <label className="text-sm font-medium text-gray-500">You Pay</label>
+                     <div className="flex items-center">
+                        <input 
+                            type="text" 
+                            value={fromAmount}
+                            onChange={handleFromAmountChange}
+                            className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent"
+                            placeholder="0"
+                        />
+                        {renderCurrencySelector(fromCurrency, setFromCurrency)}
                     </div>
-                    
-                    {/* Swap Button */}
-                    <div className="flex justify-center py-2">
-                        <button onClick={handleSwapCurrencies} className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-indigo-600">
-                            <RepeatIcon className="w-6 h-6"/>
-                        </button>
-                    </div>
+                </div>
+                
+                {/* Swap Button */}
+                <div className="flex justify-center py-2">
+                    <button onClick={handleSwapCurrencies} className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-indigo-600">
+                        <RepeatIcon className="w-6 h-6"/>
+                    </button>
+                </div>
 
-                    {/* To Field */}
-                    <div className="p-4 border rounded-lg bg-gray-50">
-                        <label className="text-sm font-medium text-gray-500">You Receive (approx.)</label>
-                         <div className="flex items-center">
-                            <input 
-                                type="text" 
-                                value={toAmount} 
-                                readOnly
-                                className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent text-gray-700"
-                                placeholder="0"
-                            />
-                            {renderCurrencySelector(toCurrency, setToCurrency)}
-                        </div>
-                    </div>
-
-                    <div className="pt-2 text-sm text-gray-600 text-center">
-                        <p>Exchange Rate: 1 {fromCurrency === 'NGN' ? toCurrency : fromCurrency} ≈ {(exchangeRate || 0).toLocaleString('en-US', {maximumFractionDigits: 0})} {fromCurrency === 'NGN' ? fromCurrency : toCurrency}</p>
-                        <p>Fee: 0.5% (included in rate)</p>
-                    </div>
-                    <div className="pt-2">
-                        <button
-                            onClick={() => alert('Currency swap initiated!')}
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                        >
-                            Convert
-                        </button>
+                {/* To Field */}
+                <div className="p-4 border rounded-lg bg-gray-50">
+                    <label className="text-sm font-medium text-gray-500">You Receive (approx.)</label>
+                     <div className="flex items-center">
+                        <input 
+                            type="text" 
+                            value={toAmount} 
+                            readOnly
+                            className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent text-gray-700"
+                            placeholder="0"
+                        />
+                        {renderCurrencySelector(toCurrency, setToCurrency)}
                     </div>
                 </div>
-            )}
+
+                <div className="pt-2 text-sm text-gray-600 text-center">
+                    <p>Exchange Rate: 1 {fromCurrency === 'NGN' ? toCurrency : fromCurrency} ≈ {USD_NGN_RATE.toLocaleString()} {fromCurrency === 'NGN' ? fromCurrency : toCurrency}</p>
+                    <p>Fee: 0.5% (included in rate)</p>
+                </div>
+                <div className="pt-2">
+                    <button
+                        onClick={() => alert('Currency swap initiated!')}
+                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                        Convert
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
@@ -5007,10 +5038,71 @@ export default function App() {
         // alert(`Congratulations! Your investment of ${formatCurrency(amount)} was successful.`);
     };
 
+    const handleRedeemPrincipal = (userId, projectId) => {
+        // --- 1. VALIDATION ---
+        const project = projects.find(p => p.id === projectId);
+        if (!project) {
+            alert("Error: Project not found.");
+            return;
+        }
+
+        const startDate = new Date(project.startDate);
+        const endDate = new Date(new Date(startDate).setMonth(startDate.getMonth() + project.term));
+        if (new Date() <= endDate) {
+            alert("Cannot redeem principal before the project term ends.");
+            return;
+        }
+
+        const userPortfolio = portfolios[userId];
+        const securityToken = userPortfolio?.tokens?.find(t => t.projectId === projectId && t.type === 'SECURITY');
+
+        if (!securityToken) {
+            alert("Error: Security token for this project not found in your portfolio.");
+            return;
+        }
+        
+        const redemptionAmount = securityToken.amount;
+
+        // --- 2. IMMUTABLE STATE UPDATES ---
+        // Create a new, updated user object
+        const updatedUser = {
+            ...users[currentUser.email],
+            wallet: {
+                ...users[currentUser.email].wallet,
+                usdt: users[currentUser.email].wallet.usdt + redemptionAmount,
+            }
+        };
+
+        // Create a new users map with the updated user
+        const nextUsers = {
+            ...users,
+            [currentUser.email]: updatedUser
+        };
+
+        // Create a new portfolio for the user with the tokens removed ("burned")
+        const updatedPortfolio = {
+            ...userPortfolio,
+            tokens: userPortfolio.tokens.filter(t => t.projectId !== projectId)
+        };
+
+        // Create a new portfolios map with the updated user portfolio
+        const nextPortfolios = {
+            ...portfolios,
+            [userId]: updatedPortfolio
+        };
+
+        // --- 3. SET ALL STATE AT ONCE ---
+        setUsers(nextUsers);
+        setPortfolios(nextPortfolios);
+        setCurrentUser(updatedUser);
+        
+        alert(`Successfully redeemed ${formatCurrency(redemptionAmount)}! The funds have been added to your USDT wallet.`);
+    };
+
     const renderPage = () => {
         if (currentUser) {
             switch (currentUser.type) {
-                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} totalBalance={totalBalance} />;
+                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} />;
                 case 'developer': return <DeveloperDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} totalBalance={totalBalance} />;
                 case 'admin': return <AdminDashboard currentUser={currentUser} projects={projects} users={users} onLogout={handleLogout} totalBalance={totalBalance} onUpdateProjectStatus={handleUpdateProjectStatus} />;
                 default:
@@ -5045,29 +5137,4 @@ export default function App() {
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
