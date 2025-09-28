@@ -4696,12 +4696,26 @@ export default function App() {
     // State management
     const [page, setPage] = useState('landing'); // landing, login, register, forgotPassword, investorDashboard, etc.
     const [currentUser, setCurrentUser] = useState(null);
-    const [users, setUsers] = useState(initialUsers);
+    const [users, setUsers] = useState(() => {
+        const saved = localStorage.getItem('kayzeraUsers');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error("Could not parse users from localStorage", e);
+            }
+        }
+        return initialUsers;
+    });
     const [projects, setProjects] = useState(initialProjects);
     const [portfolios, setPortfolios] = useState(initialPortfolios);
     const [marketListings, setMarketListings] = useState(initialMarketListings);
 
     const USD_NGN_RATE = 1500;
+
+    useEffect(() => {
+        localStorage.setItem('kayzeraUsers', JSON.stringify(users));
+    }, [users]);
 
     useEffect(() => {
         const savedUserData = localStorage.getItem('kayzeraUser');
@@ -5008,6 +5022,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
