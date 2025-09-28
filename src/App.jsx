@@ -71,6 +71,7 @@ const initialProjects = [
     projectWalletBalance: 5000, // For APY payments
     completionDate: '2024-05-15T00:00:00Z',
     fundsWithdrawn: true,
+    featured: true,
   },
   {
     id: 2,
@@ -95,6 +96,7 @@ const initialProjects = [
     status: 'active',
     projectWalletBalance: 12000,
     fundsWithdrawn: false,
+    featured: true,
   },
   {
     id: 3,
@@ -118,6 +120,7 @@ const initialProjects = [
     status: 'active',
     projectWalletBalance: 0,
     fundsWithdrawn: false,
+    featured: true,
   },
   {
     id: 4,
@@ -141,6 +144,7 @@ const initialProjects = [
     status: 'pending', // Submitted for admin approval
     projectWalletBalance: 0,
     fundsWithdrawn: false,
+    featured: false,
   },
 ];
 
@@ -351,6 +355,10 @@ const ChevronDownIcon = (props) => (
 );
 const PaperclipIcon = (props) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+);
+
+const XCircleIcon = (props) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
 );
 
 const DownloadLogoButton = () => {
@@ -709,7 +717,7 @@ const LandingPage = ({ setPage, projects }) => {
                             <p className="mt-2 text-lg text-gray-600">Carefully vetted projects from reputable developers.</p>
                         </div>
                         <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-                            {projects.filter(p => p.status === 'active' || p.status === 'funded').slice(0, 3).map(project => (
+                            {projects.filter(p => p.featured && (p.status === 'active' || p.status === 'funded')).slice(0, 3).map(project => (
                                  <ProjectCard key={project.id} project={project} setPage={setPage} />
                             ))}
                         </div>
@@ -1060,7 +1068,14 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
     const notificationContainerRef = React.useRef(null);
 
     useEffect(() => {
-        // Tailor notifications based on user type
+        const isDemoUser = ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email);
+
+        if (!isDemoUser) {
+            setNotifications([{ id: 1, text: 'Welcome to Kayzera! Complete your profile to start investing.', read: false, time: 'Just now' }]);
+            return;
+        }
+
+        // Tailor notifications based on user type for demo accounts
         if (currentUser.type === 'admin') {
             setNotifications([
                 { id: 1, text: 'New project "Ikeja Tech Hub" submitted for approval.', read: false, time: '5m ago' },
@@ -1069,14 +1084,14 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
                 { id: 4, text: 'New developer account created: Babbage Constructions Ltd.', read: true, time: '1d ago' },
                 { id: 5, text: 'Large withdrawal request ($25,000) initiated by Ada Lovelace.', read: true, time: '2d ago' },
             ]);
-        } else { // Default for investor/developer
+        } else { // Default for investor/developer demo users
             setNotifications([
                 { id: 1, text: 'Your KYC has been approved.', read: false, time: '2h ago' },
                 { id: 2, text: 'Lekki Pearl Residence is now fully funded!', read: false, time: '1d ago' },
                 { id: 3, text: 'Welcome to Kayzera! Complete your profile to start investing.', read: true, time: '3d ago' },
             ]);
         }
-    }, [currentUser.type]);
+    }, [currentUser.email, currentUser.type]);
 
 
     useEffect(() => {
@@ -2160,7 +2175,7 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }
             case 'Properties':
                 return <PropertiesMarket projects={projects} currentUser={currentUser} onInvest={onInvest} />;
             case 'Currency Exchange':
-                return <CurrencyExchange />;
+                return <CurrencyExchange currentUser={currentUser} />;
             default:
                 return null;
         }
@@ -2525,6 +2540,32 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
         return `${name.substring(0, 2)}***${name.substring(name.length - 2)}`;
     };
 
+    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
+    const listingsToShow = useMemo(() => {
+        if (!isDemoUser) return []; // For new users, show empty market initially
+        return marketListings;
+    }, [marketListings, isDemoUser]);
+
+    const emptyState = (colSpan = 6) => (
+         <tr className="bg-white">
+            <td colSpan={colSpan} className="text-center py-8 px-4">
+                 <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
+                    <TrendingUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Secondary Market is Empty</h3>
+                    <p className="mt-1 text-sm text-gray-500">There are currently no tokens listed for sale. Please check back later.</p>
+                </div>
+            </td>
+        </tr>
+    );
+
+    const emptyStateMobile = () => (
+         <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
+            <TrendingUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">Secondary Market is Empty</h3>
+            <p className="mt-1 text-sm text-gray-500">There are currently no tokens listed for sale. Please check back later.</p>
+        </div>
+    );
+
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-6xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Secondary Market Listings</h2>
@@ -2542,7 +2583,7 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {marketListings.map(listing => {
+                        {listingsToShow.length > 0 ? listingsToShow.map(listing => {
                             const project = projects.find(p => p.id === listing.projectId);
                             // Mock finding seller name
                              const sellerName = Object.values(initialUsers).find(u => u.id === listing.sellerId)?.name || 'Unknown';
@@ -2564,16 +2605,13 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                                      </td>
                                  </tr>
                              );
-                        })}
-                        {marketListings.length === 0 && (
-                            <tr><td colSpan="6" className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</td></tr>
-                        )}
+                        }) : emptyState(6)}
                     </tbody>
                 </table>
             </div>
             {/* Mobile Cards */}
             <div className="md:hidden space-y-4">
-                 {marketListings.length > 0 ? marketListings.map(listing => {
+                 {listingsToShow.length > 0 ? listingsToShow.map(listing => {
                     const project = projects.find(p => p.id === listing.projectId);
                     const sellerName = Object.values(initialUsers).find(u => u.id === listing.sellerId)?.name || 'Unknown';
                     const pricePerToken = listing.amount > 0 ? listing.price / listing.amount : 0;
@@ -2602,7 +2640,7 @@ const SecondaryMarket = ({ currentUser, marketListings, projects }) => {
                         </div>
                     );
                 }) : (
-                     <p className="text-center py-8 text-gray-500">No tokens are currently listed on the market.</p>
+                    emptyStateMobile()
                 )}
             </div>
         </div>
@@ -2624,15 +2662,29 @@ const PropertiesMarket = ({ projects, currentUser, onInvest }) => {
         return <ProjectDetailsPage project={selectedProject} onBack={handleBack} currentUser={currentUser} onInvest={onInvest} />;
     }
     
-    const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'funded');
+    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
+
+    const activeProjects = useMemo(() => {
+        if (!isDemoUser) return []; // For new users, show empty marketplace initially
+        return projects.filter(p => p.status === 'active' || p.status === 'funded');
+    }, [projects, isDemoUser]);
+    
     return (
         <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4">Available Properties for Investment</h2>
-            <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-                {activeProjects.map(project => (
-                    <ProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
-                ))}
-            </div>
+            {activeProjects.length > 0 ? (
+                <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
+                    {activeProjects.map(project => (
+                        <ProjectCard key={project.id} project={project} onViewDetails={handleViewDetails} />
+                    ))}
+                </div>
+            ) : (
+                 <div className="text-center py-16 text-gray-500 bg-gray-50 rounded-lg">
+                    <BuildingIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No Properties Available</h3>
+                    <p className="mt-1 text-sm text-gray-500">There are currently no properties available for investment. Please check back later.</p>
+                </div>
+            )}
         </div>
     );
 };
@@ -2927,98 +2979,73 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
 };
 
 
-const InvestmentModal = ({ isOpen, onClose, onConfirm, project, details }) => {
-    const [status, setStatus] = useState('confirm'); // confirm, processing, success, error
-
-    const handleConfirm = () => {
-        setStatus('processing');
-        // Simulate network request
-        setTimeout(() => {
-            try {
-                onConfirm();
-                setStatus('success');
-            } catch (e) {
-                setStatus('error');
-            }
-        }, 2000);
-    };
-
-    const handleClose = () => {
-        onClose();
-        // Reset status for next time modal opens
-        setTimeout(() => setStatus('confirm'), 300);
-    };
-
-    if (!isOpen) return null;
-
-    const renderContent = () => {
-        switch (status) {
-            case 'processing':
-                return (
-                    <div className="text-center py-8">
-                        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                        <h4 className="font-semibold text-lg text-gray-800">Processing Transaction</h4>
-                        <p className="text-gray-600">Please wait while we confirm your investment on the blockchain...</p>
-                    </div>
-                );
-            case 'success':
-                return (
-                     <div className="text-center py-8">
-                        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                        <h4 className="font-semibold text-lg text-gray-800">Investment Successful!</h4>
-                        <p className="text-gray-600">Congratulations! You are now a fractional owner of {project.title}.</p>
-                        <button onClick={handleClose} className="mt-6 bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700">View My Tokens</button>
-                    </div>
-                );
-            case 'error':
-                 return (
-                     <div className="text-center py-8">
-                        <XIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h4 className="font-semibold text-lg text-red-600">Investment Failed</h4>
-                        <p className="text-gray-600">Something went wrong. Please try again.</p>
-                        <button onClick={handleClose} className="mt-6 bg-gray-200 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-300">Close</button>
-                    </div>
-                );
-            case 'confirm':
-            default:
-                return (
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Your Investment</h3>
-                        <p className="text-gray-600 mb-4">You are about to invest in <strong>{project.title}</strong>. Please review the details below.</p>
-                        <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm border">
-                            <div className="flex justify-between"><span className="text-gray-600">Investment Amount:</span><span className="font-medium">{formatCurrency(details.numericInvestmentAmount)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-600">Platform Fee (1.5%):</span><span className="font-medium">{formatCurrency(details.fee)}</span></div>
-                            <div className="flex justify-between border-t mt-2 pt-2"><span className="font-bold">Total Debit:</span><span className="font-bold">{formatCurrency(details.totalDebit)}</span></div>
-                            <hr className="my-2"/>
-                            <div className="flex justify-between"><span className="text-gray-600">Tokens to Receive:</span><span className="font-bold text-indigo-600">{details.tokensToReceive.toLocaleString(undefined, { maximumFractionDigits: 2 })} {project.tokenTicker}</span></div>
-                        </div>
-                        <div className="mt-6 flex justify-end space-x-3">
-                            <button onClick={handleClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Cancel</button>
-                            <button onClick={handleConfirm} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Confirm Investment</button>
-                        </div>
-                    </div>
-                );
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                <div className="p-6">
-                    {renderContent()}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
-const CurrencyExchange = () => {
-    const USD_NGN_RATE = 1500;
+const CurrencyExchange = ({ currentUser }) => {
+    const [exchangeRate, setExchangeRate] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [fromAmount, setFromAmount] = useState('150,000');
-    const [toAmount, setToAmount] = useState('100.00');
+    const [toAmount, setToAmount] = useState('');
     const [fromCurrency, setFromCurrency] = useState('NGN');
     const [toCurrency, setToCurrency] = useState('USDT');
+
+    const isDemoUser = useMemo(() => ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email), [currentUser.email]);
+
+    // Mock backend fetch function
+    const fetchExchangeRate = async () => {
+        console.log("Simulating backend fetch for real-time exchange rate...");
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const rate = 1480 + Math.random() * 50; // Dynamic rate e.g., 1480-1530
+                resolve({ rate: rate });
+            }, 1500); // 1.5 second delay
+        });
+    };
+    
+    useEffect(() => {
+        if (isDemoUser) {
+            setExchangeRate(1500); // Use mock rate for demo users
+            setIsLoading(false);
+        } else {
+            // Fetch rate for new users
+            setIsLoading(true);
+            setError(null);
+            fetchExchangeRate()
+                .then(data => {
+                    setExchangeRate(data.rate);
+                    setFromAmount(''); // Clear default amount for new users
+                })
+                .catch(err => {
+                    console.error("Failed to fetch exchange rate", err);
+                    setError("Could not load the latest exchange rate. Please try again later.");
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        }
+    }, [isDemoUser]);
+
+    useEffect(() => {
+        if (!exchangeRate) {
+            setToAmount('');
+            return;
+        }
+
+        const numericFrom = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
+        if (numericFrom === 0) {
+            setToAmount('');
+            return;
+        }
+
+        let newToAmount;
+        if (fromCurrency === 'NGN') { // NGN -> Crypto
+            newToAmount = (numericFrom / exchangeRate).toFixed(2);
+        } else { // Crypto -> NGN
+            newToAmount = numericFrom * exchangeRate;
+            newToAmount = newToAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
+        }
+        setToAmount(newToAmount);
+
+    }, [fromAmount, fromCurrency, toCurrency, exchangeRate]);
 
     const handleSwapCurrencies = () => {
         const oldFromAmount = fromAmount;
@@ -3029,24 +3056,6 @@ const CurrencyExchange = () => {
         setFromCurrency(toCurrency);
         setToCurrency(oldFromCurrency);
     };
-
-    useEffect(() => {
-        const numericFrom = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
-        if (numericFrom === 0) {
-            setToAmount('');
-            return;
-        }
-
-        let newToAmount;
-        if (fromCurrency === 'NGN') { // NGN -> Crypto
-            newToAmount = (numericFrom / USD_NGN_RATE).toFixed(2);
-        } else { // Crypto -> NGN
-            newToAmount = numericFrom * USD_NGN_RATE;
-            newToAmount = newToAmount.toLocaleString('en-US', {maximumFractionDigits: 0});
-        }
-        setToAmount(newToAmount);
-
-    }, [fromAmount, fromCurrency, toCurrency]);
 
     const handleFromAmountChange = (e) => {
         let value = e.target.value;
@@ -3084,57 +3093,71 @@ const CurrencyExchange = () => {
     return (
         <div className="bg-white p-8 rounded-lg shadow-md max-w-xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Exchange NGN & Crypto</h2>
-            <div className="space-y-2">
-                {/* From Field */}
-                <div className="p-4 border rounded-lg">
-                     <label className="text-sm font-medium text-gray-500">You Pay</label>
-                     <div className="flex items-center">
-                        <input 
-                            type="text" 
-                            value={fromAmount}
-                            onChange={handleFromAmountChange}
-                            className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent"
-                            placeholder="0"
-                        />
-                        {renderCurrencySelector(fromCurrency, setFromCurrency)}
+            
+            {isLoading ? (
+                <div className="text-center py-16">
+                    <div className="w-8 h-8 border-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">Fetching latest exchange rates...</p>
+                </div>
+            ) : error ? (
+                <div className="text-center py-16">
+                    <XCircleIcon className="w-12 h-12 text-red-400 mx-auto mb-4" />
+                    <p className="text-red-600 font-semibold">Error Loading Data</p>
+                    <p className="text-gray-600 mt-2">{error}</p>
+                </div>
+            ) : (
+                <div className="space-y-2">
+                    {/* From Field */}
+                    <div className="p-4 border rounded-lg">
+                         <label className="text-sm font-medium text-gray-500">You Pay</label>
+                         <div className="flex items-center">
+                            <input 
+                                type="text" 
+                                value={fromAmount}
+                                onChange={handleFromAmountChange}
+                                className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent"
+                                placeholder="0"
+                            />
+                            {renderCurrencySelector(fromCurrency, setFromCurrency)}
+                        </div>
+                    </div>
+                    
+                    {/* Swap Button */}
+                    <div className="flex justify-center py-2">
+                        <button onClick={handleSwapCurrencies} className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-indigo-600">
+                            <RepeatIcon className="w-6 h-6"/>
+                        </button>
+                    </div>
+
+                    {/* To Field */}
+                    <div className="p-4 border rounded-lg bg-gray-50">
+                        <label className="text-sm font-medium text-gray-500">You Receive (approx.)</label>
+                         <div className="flex items-center">
+                            <input 
+                                type="text" 
+                                value={toAmount} 
+                                readOnly
+                                className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent text-gray-700"
+                                placeholder="0"
+                            />
+                            {renderCurrencySelector(toCurrency, setToCurrency)}
+                        </div>
+                    </div>
+
+                    <div className="pt-2 text-sm text-gray-600 text-center">
+                        <p>Exchange Rate: 1 {fromCurrency === 'NGN' ? toCurrency : fromCurrency} ≈ {(exchangeRate || 0).toLocaleString('en-US', {maximumFractionDigits: 0})} {fromCurrency === 'NGN' ? fromCurrency : toCurrency}</p>
+                        <p>Fee: 0.5% (included in rate)</p>
+                    </div>
+                    <div className="pt-2">
+                        <button
+                            onClick={() => alert('Currency swap initiated!')}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                        >
+                            Convert
+                        </button>
                     </div>
                 </div>
-                
-                {/* Swap Button */}
-                <div className="flex justify-center py-2">
-                    <button onClick={handleSwapCurrencies} className="p-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-indigo-600">
-                        <RepeatIcon className="w-6 h-6"/>
-                    </button>
-                </div>
-
-                {/* To Field */}
-                <div className="p-4 border rounded-lg bg-gray-50">
-                    <label className="text-sm font-medium text-gray-500">You Receive (approx.)</label>
-                     <div className="flex items-center">
-                        <input 
-                            type="text" 
-                            value={toAmount} 
-                            readOnly
-                            className="w-full text-3xl font-bold border-0 p-0 focus:ring-0 bg-transparent text-gray-700"
-                            placeholder="0"
-                        />
-                        {renderCurrencySelector(toCurrency, setToCurrency)}
-                    </div>
-                </div>
-
-                <div className="pt-2 text-sm text-gray-600 text-center">
-                    <p>Exchange Rate: 1 {fromCurrency === 'NGN' ? toCurrency : fromCurrency} ≈ {USD_NGN_RATE.toLocaleString()} {fromCurrency === 'NGN' ? fromCurrency : toCurrency}</p>
-                    <p>Fee: 0.5% (included in rate)</p>
-                </div>
-                <div className="pt-2">
-                    <button
-                        onClick={() => alert('Currency swap initiated!')}
-                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                    >
-                        Convert
-                    </button>
-                </div>
-            </div>
+            )}
         </div>
     );
 };
@@ -5022,6 +5045,11 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
 
 
 
