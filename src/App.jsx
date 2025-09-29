@@ -1644,7 +1644,7 @@ const AssetAllocationChart = ({ data }) => {
 };
 
 
-const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, onRedeemPrincipal, totalBalance }) => {
+const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, onRedeemPrincipal, totalBalance, activities, onExchange }) => {
     const [activeItem, setActiveItem] = useState('Dashboard');
 
     const sidebarItems = [
@@ -1660,9 +1660,9 @@ const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, 
         const isKycVerified = currentUser.kycStatus === 'Verified';
 
         switch (activeItem) {
-            case 'Dashboard': return <InvestorDashboardOverview currentUser={currentUser} projects={projects} portfolios={portfolios} />;
+            case 'Dashboard': return <InvestorDashboardOverview currentUser={currentUser} projects={projects} portfolios={portfolios} activities={activities} />;
             case 'My Tokens': return <InvestorMyTokens currentUser={currentUser} projects={projects} portfolios={portfolios} onClaimApy={onClaimApy} onListToken={onListToken} onRedeemPrincipal={onRedeemPrincipal} />;
-            case 'Marketplace': return <InvestorMarketplace currentUser={currentUser} marketListings={marketListings} projects={projects} onInvest={onInvest} />;
+            case 'Marketplace': return <InvestorMarketplace currentUser={currentUser} marketListings={marketListings} projects={projects} onInvest={onInvest} onExchange={onExchange} />;
             case 'My Wallet': 
                 return isKycVerified 
                     ? <InvestorWallet currentUser={currentUser} /> 
@@ -1680,7 +1680,7 @@ const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, 
     );
 };
 
-const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
+const InvestorDashboardOverview = ({ currentUser, projects, portfolios, activities }) => {
     const userPortfolio = portfolios[currentUser.id] || { tokens: [] };
 
     const stats = useMemo(() => {
@@ -1699,17 +1699,7 @@ const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
         return { totalInvestment, portfolioValue, lifetimeApy, uniqueProjects };
     }, [userPortfolio.tokens]);
     
-    const recentActivities = useMemo(() => {
-        // Only show mock activities for the demo accounts. New users will see an empty list.
-        if (currentUser.email === 'investor@demo.com' || currentUser.email === 'buyer@demo.com') {
-            return [
-                { id: 1, type: 'Investment', project: 'Eko Atlantic Tower', amount: -10000, date: '2025-09-01' },
-                { id: 2, type: 'APY Claim', project: 'Lekki Pearl Residence', amount: 62.50, date: '2025-08-05' },
-                { id: 3, type: 'Deposit', project: 'USD Wallet', amount: 25000, date: '2025-07-15' },
-            ];
-        }
-        return [];
-    }, [currentUser.email]);
+    const recentActivities = activities || [];
 
     const cryptoBalance = currentUser.wallet.usdt + currentUser.wallet.usdc;
 
@@ -1769,6 +1759,37 @@ const InvestorDashboardOverview = ({ currentUser, projects, portfolios }) => {
                      <div className="flex-grow flex items-center justify-center">
                         <AssetAllocationChart data={allocationData} />
                      </div>
+                </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                <div className="space-y-4">
+                    {recentActivities.length > 0 ? recentActivities.map(activity => {
+                        const isDebit = activity.amount < 0;
+                        const isFinancial = activity.amount !== 0 || (activity.amount === 0 && activity.type.includes('Investment')); // Investments can be 0 but still financial
+                        return (
+                            <div key={activity.id} className="flex items-center justify-between pb-4 border-b last:border-b-0">
+                                <div className="flex items-center">
+                                    <div className={`p-2 rounded-full mr-4 ${
+                                        isFinancial ? (isDebit ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600') : 'bg-gray-100 text-gray-600'
+                                    }`}>
+                                        {isFinancial ? (isDebit ? <ArrowUpRightIcon className="w-5 h-5" /> : <ArrowDownLeftIcon className="w-5 h-5" />) : <RepeatIcon className="w-5 h-5" />}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-gray-800">{activity.type}</p>
+                                        <p className="text-sm text-gray-500">{activity.project || activity.description}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                     {isFinancial && <p className={`font-semibold ${isDebit ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(activity.amount)}</p>}
+                                     <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        );
+                    }) : (
+                        <p className="text-center text-gray-500 py-4">No recent activity to display.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -2204,7 +2225,7 @@ const ListTokenModal = ({ isOpen, onClose, token, project, onConfirmList, curren
 };
 
 
-const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }) => {
+const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest, onExchange }) => {
     const [activeTab, setActiveTab] = useState('Properties');
     
     const renderTabContent = () => {
@@ -2214,7 +2235,7 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }
             case 'Properties':
                 return <PropertiesMarket projects={projects} currentUser={currentUser} onInvest={onInvest} />;
             case 'Currency Exchange':
-                return <CurrencyExchange />;
+                return <CurrencyExchange currentUser={currentUser} onExchange={onExchange} />;
             default:
                 return null;
         }
@@ -2251,6 +2272,68 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest }
 
 const InvestorWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
+    const [walletData, setWalletData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchWalletData = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                // Simulate a network request to a backend API
+                // In a real app: const response = await fetch(`/api/wallet/${currentUser.id}`);
+                // if (!response.ok) throw new Error('Failed to fetch wallet data');
+                // const data = await response.json();
+                
+                // Mock implementation with a 1-second delay
+                await new Promise(resolve => setTimeout(resolve, 1000)); 
+                
+                // For the mock, we find the user's wallet from the initial data source
+                const user = Object.values(initialUsers).find(u => u.id === currentUser.id);
+
+                if (user && user.wallet) {
+                     setWalletData(user.wallet);
+                } else {
+                    throw new Error('Wallet data not found for this user.');
+                }
+
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (currentUser && currentUser.id) {
+            fetchWalletData();
+        }
+    }, [currentUser.id]); // Refetch if the user ID changes
+
+    if (isLoading) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-lg font-semibold text-gray-700">Loading Wallet Data...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                 <p className="text-red-500 font-semibold">Error: {error}</p>
+            </div>
+        );
+    }
+    
+    if (!walletData) {
+         return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                 <p className="text-gray-600">No wallet data available.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
@@ -2271,7 +2354,7 @@ const InvestorWallet = ({ currentUser }) => {
                     </button>
                 </nav>
             </div>
-            {activeTab === 'Crypto' ? <CryptoWallet wallet={currentUser.wallet} /> : <FiatWallet wallet={currentUser.wallet} />}
+            {activeTab === 'Crypto' ? <CryptoWallet wallet={walletData} /> : <FiatWallet wallet={walletData} />}
         </div>
     );
 };
@@ -2420,9 +2503,119 @@ const WalletModal = ({ isOpen, onClose, children, title }) => {
 
 const CryptoWallet = ({ wallet }) => {
     const [modalConfig, setModalConfig] = useState({ isOpen: false, action: null, currency: null });
+    const [withdrawalStatus, setWithdrawalStatus] = useState('idle'); // idle, processing, success, error
+    const [withdrawalError, setWithdrawalError] = useState('');
+    const [withdrawalDetails, setWithdrawalDetails] = useState({ address: '', amount: '' });
 
-    const openModal = (action, currency) => setModalConfig({ isOpen: true, action, currency });
+
+    const openModal = (action, currency) => {
+        setWithdrawalStatus('idle');
+        setWithdrawalError('');
+        setWithdrawalDetails({ address: '', amount: ''});
+        setModalConfig({ isOpen: true, action, currency });
+    }
     const closeModal = () => setModalConfig({ isOpen: false, action: null, currency: null });
+
+    const handleWithdrawalChange = (e) => {
+        const { name, value } = e.target;
+        setWithdrawalDetails(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleWithdrawalRequest = async (e) => {
+        e.preventDefault();
+        setWithdrawalError('');
+        const numericAmount = parseFloat(withdrawalDetails.amount);
+        const balance = modalConfig.currency === 'USDT' ? wallet.usdt : wallet.usdc;
+
+        if (!withdrawalDetails.address.startsWith('T') || withdrawalDetails.address.length < 26) {
+            setWithdrawalError('Please enter a valid TRC20 address.');
+            return;
+        }
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            setWithdrawalError('Please enter a valid amount.');
+            return;
+        }
+        if (numericAmount > balance) {
+            setWithdrawalError('Withdrawal amount cannot exceed your balance.');
+            return;
+        }
+        
+        setWithdrawalStatus('processing');
+        try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            if (numericAmount > 5000) { // Arbitrary error condition for demo
+                throw new Error("Transaction failed. Amount exceeds daily limit.");
+            }
+            setWithdrawalStatus('success');
+        } catch(err) {
+            setWithdrawalError(err.message);
+            setWithdrawalStatus('error');
+        }
+    };
+
+
+    const renderWithdrawalModalContent = () => {
+        switch (withdrawalStatus) {
+            case 'processing':
+                return (
+                    <div className="text-center py-8">
+                        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <h4 className="font-semibold text-lg text-gray-800">Processing Withdrawal</h4>
+                        <p className="text-gray-600">Please wait while we process your request...</p>
+                    </div>
+                );
+            case 'success':
+                 return (
+                    <div className="text-center py-8">
+                        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-gray-800">Withdrawal Request Successful</h4>
+                        <p className="text-gray-600">You have successfully withdrawn {withdrawalDetails.amount} {modalConfig.currency}. The funds are on their way to your address.</p>
+                        <button onClick={closeModal} className="mt-6 bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700">Done</button>
+                    </div>
+                );
+            case 'error':
+                 return (
+                     <div className="text-center py-8">
+                        <XIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-red-600">Withdrawal Failed</h4>
+                        <p className="text-gray-600 mb-4">{withdrawalError}</p>
+                        <button onClick={() => { setWithdrawalStatus('idle'); setWithdrawalError(''); }} className="mt-6 bg-gray-200 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-300">Try Again</button>
+                    </div>
+                );
+            case 'idle':
+            default:
+                return (
+                    <form className="space-y-4" onSubmit={handleWithdrawalRequest}>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">{modalConfig.currency} Address</label>
+                            <input 
+                                type="text" 
+                                name="address"
+                                value={withdrawalDetails.address}
+                                onChange={handleWithdrawalChange}
+                                placeholder="Enter recipient TRC20 address" 
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Amount</label>
+                            <input 
+                                type="number"
+                                name="amount"
+                                value={withdrawalDetails.amount}
+                                onChange={handleWithdrawalChange}
+                                placeholder="0.00" 
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                            />
+                             {withdrawalError && <p className="text-red-500 text-xs mt-1">{withdrawalError}</p>}
+                        </div>
+                        <p className="text-xs text-gray-500">Fee: 0.5 {modalConfig.currency}</p>
+                        <button type="submit" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Confirm Withdraw</button>
+                    </form>
+                );
+        }
+    };
+
 
     const cryptoAssets = [
         { name: 'USDT', balance: wallet.usdt, logo: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=023' },
@@ -2466,18 +2659,7 @@ const CryptoWallet = ({ wallet }) => {
                     </div>
                 )}
                 {modalConfig.action === 'Withdraw' && (
-                    <form className="space-y-4">
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">{modalConfig.currency} Address</label>
-                            <input type="text" placeholder="Enter recipient address" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Amount</label>
-                            <input type="number" placeholder="0.00" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                        <p className="text-xs text-gray-500">Fee: 0.5 {modalConfig.currency}</p>
-                        <button type="submit" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Confirm Withdraw</button>
-                    </form>
+                    renderWithdrawalModalContent()
                 )}
             </WalletModal>
         </div>
@@ -2487,9 +2669,13 @@ const CryptoWallet = ({ wallet }) => {
 const FiatWallet = ({ wallet }) => {
     const [modalConfig, setModalConfig] = useState({ isOpen: false, action: null });
     const [ngnAmount, setNgnAmount] = useState('');
+    const [withdrawalStatus, setWithdrawalStatus] = useState('idle'); // idle, processing, success, error
+    const [withdrawalError, setWithdrawalError] = useState('');
     
     const openModal = (action) => {
         setNgnAmount(''); // Reset amount when opening modal
+        setWithdrawalStatus('idle');
+        setWithdrawalError('');
         setModalConfig({ isOpen: true, action });
     };
     const closeModal = () => setModalConfig({ isOpen: false, action: null });
@@ -2504,6 +2690,101 @@ const FiatWallet = ({ wallet }) => {
             setNgnAmount(formattedValue);
         } else {
             setNgnAmount('');
+        }
+    };
+
+    const handleWithdrawalRequest = async (e) => {
+        e.preventDefault();
+        setWithdrawalError('');
+        const numericAmount = parseFloat(ngnAmount.replace(/,/g, ''));
+
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            setWithdrawalError('Please enter a valid amount.');
+            return;
+        }
+
+        if (numericAmount > wallet.ngn) {
+            setWithdrawalError('Withdrawal amount cannot exceed your balance.');
+            return;
+        }
+
+        setWithdrawalStatus('processing');
+        try {
+            // Simulate a 2-second backend request
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Simulate a potential error
+            if (numericAmount > 10000000) { // Arbitrary error condition
+                 throw new Error("Withdrawal limit exceeded for this transaction.");
+            }
+            
+            // In a real app, you would call the backend here and update the global state upon success.
+            // For this mock, we'll just show the success message.
+            setWithdrawalStatus('success');
+        } catch (err) {
+            setWithdrawalError(err.message);
+            setWithdrawalStatus('error');
+        }
+    };
+
+    const renderWithdrawalModalContent = () => {
+        switch (withdrawalStatus) {
+            case 'processing':
+                return (
+                    <div className="text-center py-8">
+                        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                        <h4 className="font-semibold text-lg text-gray-800">Processing Withdrawal</h4>
+                        <p className="text-gray-600">Please wait...</p>
+                    </div>
+                );
+            case 'success':
+                return (
+                    <div className="text-center py-8">
+                        <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-gray-800">Withdrawal Successful</h4>
+                        <p className="text-gray-600">Your withdrawal of {formatNgnCurrency(parseFloat(ngnAmount.replace(/,/g, '')))} was successful. The funds have been sent to your bank account and should reflect instantly.</p>
+                        <button onClick={closeModal} className="mt-6 bg-indigo-600 text-white px-5 py-2 rounded-md hover:bg-indigo-700">Done</button>
+                    </div>
+                );
+            case 'error':
+                 return (
+                     <div className="text-center py-8">
+                        <XIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h4 className="font-semibold text-lg text-red-600">Withdrawal Failed</h4>
+                        <p className="text-gray-600 mb-4">{withdrawalError}</p>
+                        <button onClick={() => { setWithdrawalStatus('idle'); setWithdrawalError(''); }} className="mt-6 bg-gray-200 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-300">Try Again</button>
+                    </div>
+                );
+            case 'idle':
+            default:
+                return (
+                    <form className="space-y-4" onSubmit={handleWithdrawalRequest}>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Bank Name</label>
+                            <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
+                                <option>GTBank</option>
+                                <option>Zenith Bank</option>
+                                <option>Access Bank</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Account Number</label>
+                            <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Amount (NGN)</label>
+                            <input 
+                                type="text" 
+                                placeholder="0" 
+                                value={ngnAmount}
+                                onChange={handleNgnChange}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                            />
+                            {withdrawalError && <p className="text-red-500 text-xs mt-1">{withdrawalError}</p>}
+                       </div>
+                       <button type="submit" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Request Withdrawal</button>
+                   </form>
+                );
         }
     };
 
@@ -2536,31 +2817,7 @@ const FiatWallet = ({ wallet }) => {
                     </div>
                 )}
                 {modalConfig.action === 'Withdraw' && (
-                    <form className="space-y-4">
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Bank Name</label>
-                            <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
-                                <option>GTBank</option>
-                                <option>Zenith Bank</option>
-                                <option>Access Bank</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Account Number</label>
-                            <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Amount (NGN)</label>
-                            <input 
-                                type="text" 
-                                placeholder="0" 
-                                value={ngnAmount}
-                                onChange={handleNgnChange}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                            />
-                        </div>
-                        <button type="submit" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Request Withdrawal</button>
-                    </form>
+                    renderWithdrawalModalContent()
                 )}
             </WalletModal>
         </div>
@@ -2695,6 +2952,7 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
     const [mainImage, setMainImage] = useState(project.images[0]);
     const [investmentAmount, setInvestmentAmount] = useState('');
     const [isInvestmentModalOpen, setInvestmentModalOpen] = useState(false);
+    const [isAiChatModalOpen, setIsAiChatModalOpen] = useState(false);
     
     const isKycVerified = currentUser.kycStatus === 'Verified';
     const stablecoinBalance = (currentUser.wallet.usdt || 0) + (currentUser.wallet.usdc || 0);
@@ -2816,13 +3074,7 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                                 )}
                                  <div className="mt-4">
                                      <button 
-                                        onClick={() => setInvestmentModalOpen(true)} 
-                                        className="w-full bg-indigo-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                        disabled={isDeveloper || isFunded || !investmentAmount || numericInvestmentAmount <= 0 || totalDebit > stablecoinBalance || !isKycVerified}
-                                     >
-                                        {isDeveloper ? "Developers cannot invest" : isFunded ? "Project Fully Funded" : !isKycVerified ? "Verify KYC to Invest" : "Invest Now"}
-                                     </button>
-                                     <button 
+                                        onClick={() => setIsAiChatModalOpen(true)}
                                         className="mt-2 w-full flex items-center justify-center bg-transparent text-indigo-600 px-6 py-2 rounded-md font-semibold hover:bg-indigo-50 border border-indigo-200 transition-colors"
                                      >
                                         <SparklesIcon className="w-5 h-5 mr-2" /> ✨ Ask AI about this Property
@@ -2841,6 +3093,8 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                 details={{ numericInvestmentAmount, fee, totalDebit, tokensToReceive }}
             />
              <AIChatModal 
+                isOpen={isAiChatModalOpen}
+                onClose={() => setIsAiChatModalOpen(false)}
                 project={project}
             />
         </div>
@@ -3067,21 +3321,29 @@ const InvestmentModal = ({ isOpen, onClose, onConfirm, project, details }) => {
 };
 
 
-const CurrencyExchange = () => {
+const CurrencyExchange = ({ currentUser, onExchange }) => {
     const USD_NGN_RATE = 1500;
-    const [fromAmount, setFromAmount] = useState('150,000');
-    const [toAmount, setToAmount] = useState('100.00');
+    const [fromAmount, setFromAmount] = useState('');
+    const [toAmount, setToAmount] = useState('');
     const [fromCurrency, setFromCurrency] = useState('NGN');
     const [toCurrency, setToCurrency] = useState('USDT');
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const fromBalance = useMemo(() => {
+        if (!currentUser) return 0;
+        switch (fromCurrency) {
+            case 'NGN': return currentUser.wallet.ngn;
+            case 'USDT': return currentUser.wallet.usdt;
+            case 'USDC': return currentUser.wallet.usdc;
+            default: return 0;
+        }
+    }, [fromCurrency, currentUser]);
 
     const handleSwapCurrencies = () => {
-        const oldFromAmount = fromAmount;
         setFromAmount(toAmount);
-        setToAmount(oldFromAmount);
-        
-        const oldFromCurrency = fromCurrency;
         setFromCurrency(toCurrency);
-        setToCurrency(oldFromCurrency);
+        setToCurrency(fromCurrency);
     };
 
     useEffect(() => {
@@ -3103,6 +3365,8 @@ const CurrencyExchange = () => {
     }, [fromAmount, fromCurrency, toCurrency]);
 
     const handleFromAmountChange = (e) => {
+        setSuccess('');
+        setError('');
         let value = e.target.value;
         if (fromCurrency === 'NGN') {
             const numericString = value.replace(/[^0-9]/g, '');
@@ -3114,6 +3378,28 @@ const CurrencyExchange = () => {
                 cleanValue = parts[0] + '.' + parts.slice(1).join('');
             }
             setFromAmount(cleanValue);
+        }
+    };
+
+    const handleConvert = () => {
+        setError('');
+        setSuccess('');
+        const numericFrom = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
+        const numericTo = parseFloat(String(toAmount).replace(/,/g, '')) || 0;
+
+        if (numericFrom <= 0) {
+            setError('Please enter a valid amount to convert.');
+            return;
+        }
+        
+        const result = onExchange(currentUser.id, fromCurrency, numericFrom, toCurrency, numericTo);
+
+        if (result.success) {
+            setSuccess(result.message);
+            setFromAmount('');
+            setToAmount('');
+        } else {
+            setError(result.message);
         }
     };
     
@@ -3135,13 +3421,19 @@ const CurrencyExchange = () => {
         return <span className="text-xl font-semibold bg-gray-100 rounded-md py-2 px-4">{currency}</span>
     };
 
+    const numericFromAmount = parseFloat(String(fromAmount).replace(/,/g, '')) || 0;
+    const isButtonDisabled = numericFromAmount <= 0 || numericFromAmount > fromBalance || currentUser.kycStatus !== 'Verified';
+    
     return (
         <div className="bg-white p-8 rounded-lg shadow-md max-w-xl mx-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Exchange NGN & Crypto</h2>
             <div className="space-y-2">
                 {/* From Field */}
                 <div className="p-4 border rounded-lg">
-                     <label className="text-sm font-medium text-gray-500">You Pay</label>
+                     <div className="flex justify-between items-center text-sm font-medium text-gray-500">
+                        <span>You Pay</span>
+                         <span>Balance: {fromBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                     </div>
                      <div className="flex items-center">
                         <input 
                             type="text" 
@@ -3180,12 +3472,17 @@ const CurrencyExchange = () => {
                     <p>Exchange Rate: 1 {fromCurrency === 'NGN' ? toCurrency : fromCurrency} ≈ {USD_NGN_RATE.toLocaleString()} {fromCurrency === 'NGN' ? fromCurrency : toCurrency}</p>
                     <p>Fee: 0.5% (included in rate)</p>
                 </div>
+
+                {error && <p className="text-center text-red-500 text-sm mt-2">{error}</p>}
+                {success && <p className="text-center text-green-600 text-sm mt-2">{success}</p>}
+
                 <div className="pt-2">
                     <button
-                        onClick={() => alert('Currency swap initiated!')}
-                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                        onClick={handleConvert}
+                        disabled={isButtonDisabled}
+                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
-                        Convert
+                        {currentUser.kycStatus !== 'Verified' ? 'Verify KYC to Exchange' : 'Convert'}
                     </button>
                 </div>
             </div>
@@ -3195,7 +3492,7 @@ const CurrencyExchange = () => {
 
 
 // --- DEVELOPER DASHBOARD --- //
-const DeveloperDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, totalBalance }) => {
+const DeveloperDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, totalBalance, activities, onCreateProject, onWithdrawFunds, onDepositApyFunds }) => {
     const [activeItem, setActiveItem] = useState('Dashboard');
     const [managingProjectId, setManagingProjectId] = useState(null);
 
@@ -3215,14 +3512,14 @@ const DeveloperDashboard = ({ currentUser, projects, portfolios, marketListings,
         const developerMarketplaceOnInvest = () => alert("Developers are not permitted to invest in projects or purchase from the secondary market.");
 
         switch (activeItem) {
-            case 'Dashboard': return <DeveloperDashboardOverview currentUser={currentUser} projects={developerProjects} portfolios={portfolios} />;
+            case 'Dashboard': return <DeveloperDashboardOverview currentUser={currentUser} projects={developerProjects} portfolios={portfolios} activities={activities} />;
             case 'My Projects':
                 const projectToManage = projects.find(p => p.id === managingProjectId);
                 if (projectToManage) {
-                    return <DeveloperManageProject project={projectToManage} onBack={() => setManagingProjectId(null)} />;
+                    return <DeveloperManageProject project={projectToManage} onBack={() => setManagingProjectId(null)} onWithdrawFunds={onWithdrawFunds} onDepositApyFunds={onDepositApyFunds} />;
                 }
                 return <DeveloperMyProjects projects={developerProjects} onManageProject={setManagingProjectId} />;
-            case 'Create New Project': return <DeveloperCreateProject />;
+            case 'Create New Project': return <DeveloperCreateProject onCreateProject={onCreateProject} />;
             case 'Marketplace': return <InvestorMarketplace currentUser={currentUser} marketListings={marketListings} projects={projects} onInvest={developerMarketplaceOnInvest} />;
             case 'Operational Wallet': return <DeveloperWallet currentUser={currentUser} />;
             case 'Settings': return <DeveloperSettings currentUser={currentUser} />;
@@ -3243,7 +3540,7 @@ const DeveloperDashboard = ({ currentUser, projects, portfolios, marketListings,
     );
 };
 
-const DeveloperDashboardOverview = ({ currentUser, projects, portfolios }) => {
+const DeveloperDashboardOverview = ({ currentUser, projects, portfolios, activities }) => {
     const stats = useMemo(() => {
         const totalCapitalRaised = projects.reduce((sum, p) => sum + p.amountRaised, 0);
         const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'funded').length;
@@ -3324,6 +3621,53 @@ const DeveloperDashboardOverview = ({ currentUser, projects, portfolios }) => {
                         </div>
                     }
                     <UpcomingApyCard projects={projects} />
+                </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                <div className="space-y-4">
+                    {activities && activities.length > 0 ? activities.map(activity => {
+                        const isCredit = activity.amount > 0;
+                        const isDebit = activity.amount < 0;
+                        const isFinancial = activity.amount !== 0;
+
+                        let icon;
+                        let colors;
+
+                        if (isFinancial) {
+                            if (isCredit) { // e.g., Funds withdrawn to treasury
+                                icon = <ArrowDownLeftIcon className="w-5 h-5" />;
+                                colors = 'bg-green-100 text-green-600';
+                            } else { // isDebit, e.g., APY wallet deposit
+                                icon = <ArrowUpRightIcon className="w-5 h-5" />;
+                                colors = 'bg-red-100 text-red-600';
+                            }
+                        } else { // Neutral/Informational
+                            icon = <ClipboardIcon className="w-5 h-5" />;
+                            colors = 'bg-gray-100 text-gray-600';
+                        }
+                        
+                        return (
+                            <div key={activity.id} className="flex items-center justify-between pb-4 border-b last:border-b-0">
+                                <div className="flex items-center">
+                                    <div className={`p-2 rounded-full mr-4 ${colors}`}>
+                                        {icon}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-gray-800">{activity.type}</p>
+                                        <p className="text-sm text-gray-500">{activity.project || activity.description}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                     {isFinancial && <p className={`font-semibold ${isCredit ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(activity.amount)}</p>}
+                                     <p className="text-sm text-gray-500">{new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                </div>
+                            </div>
+                        );
+                    }) : (
+                        <p className="text-center text-gray-500 py-4">No recent activity to display.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -3490,23 +3834,30 @@ const DeveloperMyProjects = ({ projects, onManageProject }) => {
                         </div>
                     </div>
                 )) : (
-                     <p className="text-center py-8 text-gray-500">You have not created any projects yet.</p>
+                    <p className="text-center py-4 text-gray-500">You have not created any projects yet.</p>
                 )}
             </div>
         </div>
     );
 };
 
-const DeveloperManageProject = ({ project, onBack }) => {
+const DeveloperManageProject = ({ project, onBack, onWithdrawFunds, onDepositApyFunds }) => {
     const [modalOpen, setModalOpen] = useState(false);
+    const [depositAmount, setDepositAmount] = useState('');
     const isFullyFunded = project.amountRaised >= project.fundingGoal;
     const monthlyApyCost = (project.amountRaised * (project.apy / 100)) / 12;
     const listingFee = project.amountRaised * 0.03;
     const netWithdrawal = project.amountRaised - listingFee;
 
     const handleWithdraw = () => {
-        alert(`Initiating withdrawal...\n\nTotal Raised: ${formatCurrency(project.amountRaised)}\nPlatform Fee (3%): -${formatCurrency(listingFee)}\n\nNet Payout to Treasury: ${formatCurrency(netWithdrawal)}`);
-        // In a real app, this would trigger a secure backend transaction.
+        onWithdrawFunds(project.id);
+    };
+
+    const handleDepositSubmit = (e) => {
+        e.preventDefault();
+        onDepositApyFunds(project.id, depositAmount);
+        setModalOpen(false);
+        setDepositAmount('');
     };
 
     return (
@@ -3567,22 +3918,28 @@ const DeveloperManageProject = ({ project, onBack }) => {
                             <div className="flex justify-between font-bold border-t pt-2 mt-2"><span>Net Payout:</span> <strong>{formatCurrency(netWithdrawal)}</strong></div>
                         </div>
                         <button 
-                            disabled={!isFullyFunded}
+                            disabled={!isFullyFunded || project.fundsWithdrawn}
                             onClick={handleWithdraw}
                             className="w-full bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
                         >
-                            {isFullyFunded ? `Withdraw Funds to Treasury` : 'Funding Goal Not Met'}
+                            {project.fundsWithdrawn ? 'Funds Already Withdrawn' : isFullyFunded ? `Withdraw Funds to Treasury` : 'Funding Goal Not Met'}
                         </button>
-                         {isFullyFunded && <p className="text-xs text-center mt-2 text-green-600">Congratulations! Your project is fully funded.</p>}
+                         {isFullyFunded && !project.fundsWithdrawn && <p className="text-xs text-center mt-2 text-green-600">Congratulations! Your project is fully funded.</p>}
                     </div>
                  </div>
             </div>
 
              <WalletModal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Deposit to ${project.title} (${project.tokenTicker}) Wallet`}>
-                 <form className="space-y-4">
+                 <form onSubmit={handleDepositSubmit} className="space-y-4">
                      <div>
                         <label className="block text-sm font-medium text-gray-700">Amount (USD)</label>
-                        <input type="number" placeholder="e.g., 5000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        <input
+                            type="number"
+                            value={depositAmount}
+                            onChange={(e) => setDepositAmount(e.target.value)}
+                            placeholder="e.g., 5000"
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                        />
                     </div>
                      <p className="text-xs text-gray-500">You will be prompted to confirm the transaction from your connected wallet.</p>
                     <button type="submit" className="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Proceed to Deposit</button>
@@ -3595,6 +3952,62 @@ const DeveloperManageProject = ({ project, onBack }) => {
 
 const DeveloperWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
+    const [walletData, setWalletData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchWalletData = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                // Mock implementation with a 1-second delay to simulate network request
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const user = Object.values(initialUsers).find(u => u.id === currentUser.id);
+
+                if (user && user.wallet) {
+                     setWalletData(user.wallet);
+                } else {
+                    throw new Error('Operational wallet data not found for this user.');
+                }
+
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (currentUser && currentUser.id) {
+            fetchWalletData();
+        }
+    }, [currentUser.id]);
+
+    if (isLoading) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-lg font-semibold text-gray-700">Loading Wallet Data...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                 <p className="text-red-500 font-semibold">Error: {error}</p>
+            </div>
+        );
+    }
+    
+    if (!walletData) {
+         return (
+            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
+                 <p className="text-gray-600">No wallet data available.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
@@ -3616,7 +4029,7 @@ const DeveloperWallet = ({ currentUser }) => {
                     </button>
                 </nav>
             </div>
-            {activeTab === 'Crypto' ? <CryptoWallet wallet={currentUser.wallet} /> : <FiatWallet wallet={currentUser.wallet} />}
+            {activeTab === 'Crypto' ? <CryptoWallet wallet={walletData} /> : <FiatWallet wallet={walletData} />}
         </div>
     );
 };
@@ -3713,7 +4126,7 @@ const TreasuryAddressSettings = ({ address }) => {
     );
 };
 
-const DeveloperCreateProject = () => {
+const DeveloperCreateProject = ({ onCreateProject }) => {
     const [formData, setFormData] = useState({
         projectTitle: '',
         location: '',
@@ -3806,23 +4219,36 @@ const DeveloperCreateProject = () => {
         // In a real application, this function would send the formData 
         // to a secure backend API endpoint, like '/api/projects'.
         
-        console.log("Submitting project data to backend:", formData);
+        e.preventDefault();
+        
+        if (!formData.projectTitle || !formData.fundingGoal || !formData.apy || !formData.term || !formData.tokenSupply || !formData.tokenTicker) {
+            alert("Please fill out all project information and financial fields before submitting.");
+            return;
+        }
 
-        // --- BACKEND PROCESS (SIMULATED) ---
-        // 1. The backend server receives the formData.
-        // 2. It generates a unique file number, e.g., 'PROJ-YYYYMMDD-###'.
-        const fileNumber = `PROJ-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+        const projectData = {
+            title: formData.projectTitle,
+            location: formData.location,
+            description: formData.description,
+            fundingGoal: parseFloat(String(formData.fundingGoal).replace(/,/g, '')),
+            apy: parseFloat(formData.apy),
+            term: parseInt(formData.term),
+            tokenSupply: parseFloat(String(formData.tokenSupply).replace(/,/g, '')),
+            tokenTicker: formData.tokenTicker,
+        };
         
-        // 3. It saves the project to the database with 'status: "pending"'.
+        onCreateProject(projectData);
         
-        // 4. It uses an email service (like SendGrid, AWS SES) to send a formatted email to the admin.
-        // The email content would be generated using a template like the one in 'admin_email_template.md'.
-        console.log(`Email notification prepared for admin with File #: ${fileNumber}`);
-        
-        // 5. The backend returns a success message to the frontend.
-        alert(`Project submitted successfully!\nYour reference file number is ${fileNumber}.\nThe admin team has been notified.`);
-
-        // Here, you might clear the form or redirect the user.
+        setFormData({
+            projectTitle: '',
+            location: '',
+            description: '',
+            fundingGoal: '',
+            apy: '',
+            term: '',
+            tokenSupply: '',
+            tokenTicker: '',
+        });
     };
 
 
@@ -4764,6 +5190,19 @@ export default function App() {
     const [projects, setProjects] = useState(initialProjects);
     const [portfolios, setPortfolios] = useState(initialPortfolios);
     const [marketListings, setMarketListings] = useState(initialMarketListings);
+    const [userActivities, setUserActivities] = useState({
+        1: [ // Ada Lovelace's initial activities
+            { id: 1, type: 'Investment', project: 'Eko Atlantic Tower', amount: -10000, date: '2025-09-01T10:00:00Z' },
+            { id: 2, type: 'APY Claim', project: 'Lekki Pearl Residence', amount: 62.50, date: '2025-08-05T11:00:00Z' },
+            { id: 3, type: 'Deposit', project: 'USD Wallet', amount: 25000, date: '2025-07-15' },
+        ],
+        2: [ // Charles Babbage's initial activities
+            { id: 1, type: 'Project Submitted', project: 'Ikeja Tech Hub', amount: 0, date: '2025-09-25T14:00:00Z', description: 'Submitted for admin approval.' },
+            { id: 2, type: 'Funds Withdrawn', project: 'Lekki Pearl Residence', amount: 242500, date: '2025-09-10T11:00:00Z' },
+            { id: 3, type: 'APY Wallet Deposit', project: 'Eko Atlantic Tower', amount: -12000, date: '2025-09-09T15:30:00Z' },
+        ],
+        4: [], // Bayo Adekunle starts with no activities
+    });
 
     const USD_NGN_RATE = 1500;
 
@@ -4832,6 +5271,18 @@ export default function App() {
             document.title = originalTitle; // Restore original title on unmount
         };
     }, []);
+
+    const addActivity = (userId, activity) => {
+        setUserActivities(prev => {
+            const currentUserActivities = prev[userId] || [];
+            // Add new activity to the front of the array
+            const updatedActivities = [{ ...activity, id: Date.now(), date: new Date().toISOString() }, ...currentUserActivities];
+            return {
+                ...prev,
+                [userId]: updatedActivities
+            };
+        });
+    };
 
     // Effect to handle invalid user type safely without causing render loops
     useEffect(() => {
@@ -4910,6 +5361,12 @@ export default function App() {
             
             // Update token's last claim date
             token.lastApyClaimDate = new Date().toISOString();
+
+            addActivity(userId, {
+                type: 'APY Claim',
+                project: project.title,
+                amount: monthlyApyAmount
+            });
             
             alert(`Successfully claimed ${formatCurrency(monthlyApyAmount)} APY!`);
 
@@ -4925,6 +5382,16 @@ export default function App() {
             }];
             return newListings;
         });
+
+        const project = projects.find(p => p.id === listingDetails.projectId);
+        if (project) {
+            addActivity(listingDetails.sellerId, {
+                type: 'Token Listed',
+                project: project.title,
+                amount: 0,
+                description: `Listed ${listingDetails.amount.toLocaleString()} ${project.tokenTicker} tokens for ${formatCurrency(listingDetails.price)}`
+            });
+        }
 
         // Optional: Update the token status in the user's portfolio to 'listed'
         // This part is more complex if they can list partial amounts.
@@ -4988,6 +5455,12 @@ export default function App() {
             remainingDebit = 0;
         }
 
+        const project = projects.find(p => p.id === projectId);
+        if (!project) {
+            alert("Error: Project not found.");
+            return;
+        }
+
         // 1. Debit investor's wallet
         const updatedUser = {
             ...users[currentUser.email],
@@ -5035,6 +5508,12 @@ export default function App() {
             newPortfolios[currentUser.id] = userPortfolio;
             return newPortfolios;
         });
+
+        addActivity(currentUser.id, {
+            type: 'Investment',
+            project: project.title,
+            amount: -amount
+        });
         // alert(`Congratulations! Your investment of ${formatCurrency(amount)} was successful.`);
     };
 
@@ -5062,6 +5541,12 @@ export default function App() {
         }
         
         const redemptionAmount = securityToken.amount;
+
+        addActivity(userId, {
+            type: 'Principal Redeemed',
+            project: project.title,
+            amount: redemptionAmount
+        });
 
         // --- 2. IMMUTABLE STATE UPDATES ---
         // Create a new, updated user object
@@ -5099,11 +5584,179 @@ export default function App() {
         alert(`Successfully redeemed ${formatCurrency(redemptionAmount)}! The funds have been added to your USDT wallet.`);
     };
 
+    const handleCurrencyExchange = (userId, fromCurrency, fromAmount, toCurrency, toAmount) => {
+        const user = Object.values(users).find(u => u.id === userId);
+        if (!user) {
+            return { success: false, message: 'User not found.' };
+        }
+
+        const wallet = { ...user.wallet }; // Create a copy to modify
+        let fromBalanceKey = '';
+        if (fromCurrency === 'NGN') fromBalanceKey = 'ngn';
+        else if (fromCurrency === 'USDT') fromBalanceKey = 'usdt';
+        else if (fromCurrency === 'USDC') fromBalanceKey = 'usdc';
+
+        if (!fromBalanceKey || wallet[fromBalanceKey] < fromAmount) {
+            return { success: false, message: `Insufficient ${fromCurrency} balance.` };
+        }
+
+        let toBalanceKey = '';
+        if (toCurrency === 'NGN') toBalanceKey = 'ngn';
+        else if (toCurrency === 'USDT') toBalanceKey = 'usdt';
+        else if (toCurrency === 'USDC') toBalanceKey = 'usdc';
+
+        if (!toBalanceKey) {
+            return { success: false, message: 'Invalid target currency.' };
+        }
+
+        // Update wallet
+        wallet[fromBalanceKey] -= fromAmount;
+        wallet[toBalanceKey] += toAmount;
+
+        const updatedUser = { ...user, wallet };
+
+        // Update state
+        const updatedUsers = { ...users, [updatedUser.email]: updatedUser };
+        setUsers(updatedUsers);
+        if (currentUser && currentUser.id === userId) {
+            setCurrentUser(updatedUser);
+        }
+
+        // Add activity
+        addActivity(userId, {
+            type: 'Currency Exchange',
+            description: `Converted ${fromAmount.toLocaleString()} ${fromCurrency} to ${toAmount.toLocaleString()} ${toCurrency}`,
+            amount: 0 // It's a swap, not a net gain/loss
+        });
+
+        return { success: true, message: 'Exchange successful!' };
+    };
+
+    const handleCreateProject = (projectData) => {
+        const newProject = {
+            ...projectData,
+            id: projects.length + 1,
+            developerId: currentUser.id,
+            developerName: currentUser.name,
+            amountRaised: 0,
+            status: 'pending',
+            projectWalletBalance: 0,
+            fundsWithdrawn: false,
+            images: [
+                'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=2000',
+                'https://images.unsplash.com/photo-1448630360428-65456885c650?q=80&w=2000',
+            ],
+            startDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+        };
+
+        setProjects(prev => [...prev, newProject]);
+
+        addActivity(currentUser.id, {
+            type: 'Project Submitted',
+            project: newProject.title,
+            amount: 0,
+            description: `Submitted for admin approval.`
+        });
+        
+        alert(`Project "${newProject.title}" submitted successfully for review!`);
+    };
+
+    const handleWithdrawFunds = (projectId) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project || project.fundsWithdrawn) {
+            alert("Error: Project not found or funds already withdrawn.");
+            return;
+        }
+        
+        const listingFee = project.amountRaised * 0.03;
+        const netWithdrawal = project.amountRaised - listingFee;
+
+        const updatedUser = {
+            ...users[currentUser.email],
+            wallet: {
+                ...users[currentUser.email].wallet,
+                usdt: users[currentUser.email].wallet.usdt + netWithdrawal,
+            }
+        };
+
+        setUsers(prev => ({...prev, [currentUser.email]: updatedUser}));
+        setCurrentUser(updatedUser);
+
+        setProjects(prev => prev.map(p => p.id === projectId ? {...p, fundsWithdrawn: true} : p));
+
+        addActivity(currentUser.id, {
+            type: 'Funds Withdrawn',
+            project: project.title,
+            amount: netWithdrawal,
+            description: `Net payout of ${formatCurrency(netWithdrawal)} to treasury.`
+        });
+
+        alert(`Withdrawal successful! ${formatCurrency(netWithdrawal)} has been sent to your treasury address.`);
+    };
+
+    const handleDepositApyFunds = (projectId, depositAmount) => {
+        const numericAmount = parseFloat(depositAmount);
+        if (isNaN(numericAmount) || numericAmount <= 0) {
+            alert("Please enter a valid amount to deposit.");
+            return;
+        }
+        
+        const project = projects.find(p => p.id === projectId);
+        if (!project) {
+            alert("Error: Project not found.");
+            return;
+        }
+
+        const userWallet = users[currentUser.email].wallet;
+        const totalStablecoin = userWallet.usdt + userWallet.usdc;
+
+        if (totalStablecoin < numericAmount) {
+            alert("Insufficient stablecoin balance (USDT/USDC) for this deposit.");
+            return;
+        }
+
+        let remainingDebit = numericAmount;
+        let newUsdt = userWallet.usdt;
+        let newUsdc = userWallet.usdc;
+
+        if (newUsdt >= remainingDebit) {
+            newUsdt -= remainingDebit;
+        } else {
+            remainingDebit -= newUsdt;
+            newUsdt = 0;
+            newUsdc -= remainingDebit;
+        }
+
+        const updatedUser = {
+            ...users[currentUser.email],
+            wallet: { ...userWallet, usdt: newUsdt, usdc: newUsdc }
+        };
+        
+        setUsers(prev => ({ ...prev, [currentUser.email]: updatedUser }));
+        setCurrentUser(updatedUser);
+
+        setProjects(prev => prev.map(p => 
+            p.id === projectId 
+            ? { ...p, projectWalletBalance: p.projectWalletBalance + numericAmount } 
+            : p
+        ));
+
+        addActivity(currentUser.id, {
+            type: 'APY Wallet Deposit',
+            project: project.title,
+            amount: -numericAmount,
+            description: `Deposited ${formatCurrency(numericAmount)} for APY payments.`
+        });
+        
+        alert(`Successfully deposited ${formatCurrency(numericAmount)} into the project's APY wallet.`);
+    };
+
     const renderPage = () => {
         if (currentUser) {
+            const activities = userActivities[currentUser.id] || [];
             switch (currentUser.type) {
-                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} />;
-                case 'developer': return <DeveloperDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} totalBalance={totalBalance} />;
+                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} activities={activities} onExchange={handleCurrencyExchange} />;
+                case 'developer': return <DeveloperDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} totalBalance={totalBalance} activities={activities} onCreateProject={handleCreateProject} onWithdrawFunds={handleWithdrawFunds} onDepositApyFunds={handleDepositApyFunds} />;
                 case 'admin': return <AdminDashboard currentUser={currentUser} projects={projects} users={users} onLogout={handleLogout} totalBalance={totalBalance} onUpdateProjectStatus={handleUpdateProjectStatus} />;
                 default:
                     // The useEffect above will handle logging out the user.
@@ -5137,4 +5790,16 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
