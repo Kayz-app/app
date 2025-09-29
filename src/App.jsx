@@ -2272,61 +2272,9 @@ const InvestorMarketplace = ({ currentUser, marketListings, projects, onInvest, 
 
 const InvestorWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
-    const [walletData, setWalletData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchWalletData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // Simulate a network request to a backend API
-                // In a real app: const response = await fetch(`/api/wallet/${currentUser.id}`);
-                // if (!response.ok) throw new Error('Failed to fetch wallet data');
-                // const data = await response.json();
-                
-                // Mock implementation with a 1-second delay
-                await new Promise(resolve => setTimeout(resolve, 1000)); 
-                
-                // For the mock, we find the user's wallet from the initial data source
-                const user = Object.values(initialUsers).find(u => u.id === currentUser.id);
+    const walletData = currentUser.wallet;
 
-                if (user && user.wallet) {
-                     setWalletData(user.wallet);
-                } else {
-                    throw new Error('Wallet data not found for this user.');
-                }
-
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (currentUser && currentUser.id) {
-            fetchWalletData();
-        }
-    }, [currentUser.id]); // Refetch if the user ID changes
-
-    if (isLoading) {
-        return (
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
-                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-lg font-semibold text-gray-700">Loading Wallet Data...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
-                 <p className="text-red-500 font-semibold">Error: {error}</p>
-            </div>
-        );
-    }
-    
     if (!walletData) {
          return (
             <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
@@ -2951,6 +2899,7 @@ const PropertiesMarket = ({ projects, currentUser, onInvest }) => {
 const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
     const [mainImage, setMainImage] = useState(project.images[0]);
     const [investmentAmount, setInvestmentAmount] = useState('');
+    const [investmentError, setInvestmentError] = useState('');
     const [isInvestmentModalOpen, setInvestmentModalOpen] = useState(false);
     const [isAiChatModalOpen, setIsAiChatModalOpen] = useState(false);
     
@@ -2965,22 +2914,22 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
     
     const isDeveloper = currentUser && currentUser.type === 'developer';
     const isFunded = project.status === 'funded';
+    const isButtonDisabled = isFunded || isDeveloper || !isKycVerified || numericInvestmentAmount <= 0 || !!investmentError;
 
     const handleAmountChange = (e) => {
+        setInvestmentError('');
         const value = e.target.value;
         const numericString = value.replace(/[^0-9]/g, '');
-        let numericValue = parseInt(numericString, 10);
+        const numericValue = parseInt(numericString, 10);
 
         if (isNaN(numericValue)) {
             setInvestmentAmount('');
             return;
         }
 
-        // Calculate max investment considering the 1.5% fee
-        const maxInvestment = Math.floor(stablecoinBalance / 1.015);
-
-        if (numericValue > maxInvestment) {
-            numericValue = maxInvestment;
+        const currentTotalDebit = numericValue * 1.015;
+        if (currentTotalDebit > stablecoinBalance) {
+            setInvestmentError(`Total debit (including fee) exceeds your available balance of ${formatCurrency(stablecoinBalance)}.`);
         }
         
         setInvestmentAmount(numericValue > 0 ? numericValue.toLocaleString('en-US') : '');
@@ -3045,9 +2994,10 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                                         placeholder={isFunded ? "This project is fully funded" : "Enter amount (USD)"} 
                                         value={investmentAmount}
                                         onChange={handleAmountChange}
-                                        className="w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+                                        className={`w-full border rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 ${investmentError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
                                         disabled={isFunded || isDeveloper}
                                     />
+                                    {investmentError && <p className="text-red-500 text-xs mt-1">{investmentError}</p>}
                                     <div className="mt-2 text-sm text-gray-500 text-right">
                                         Available Balance: <strong>{formatCurrency(stablecoinBalance)}</strong>
                                     </div>
@@ -3072,12 +3022,20 @@ const ProjectDetailsPage = ({ project, onBack, currentUser, onInvest }) => {
                                         </div>
                                     </div>
                                 )}
-                                 <div className="mt-4">
+                                 <div className="mt-4 space-y-2">
+                                     <button
+                                        onClick={() => setInvestmentModalOpen(true)}
+                                        disabled={isButtonDisabled}
+                                        className="w-full flex items-center justify-center bg-indigo-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-indigo-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                     >
+                                        <ZapIcon className="w-5 h-5 mr-2" />
+                                        {isKycVerified ? 'Invest Now' : 'Complete KYC to Invest'}
+                                     </button>
                                      <button 
                                         onClick={() => setIsAiChatModalOpen(true)}
-                                        className="mt-2 w-full flex items-center justify-center bg-transparent text-indigo-600 px-6 py-2 rounded-md font-semibold hover:bg-indigo-50 border border-indigo-200 transition-colors"
+                                        className="w-full flex items-center justify-center bg-transparent text-indigo-600 px-6 py-2 rounded-md font-semibold hover:bg-indigo-50 border border-indigo-200 transition-colors"
                                      >
-                                        <SparklesIcon className="w-5 h-5 mr-2" /> ✨ Ask AI about this Property
+                                        <SparklesIcon className="w-5 h-5 mr-2" /> Ask AI about this Property
                                      </button>
                                  </div>
                              </div>
@@ -3151,7 +3109,7 @@ const AIChatModal = ({ isOpen, onClose, project }) => {
 
             
 
-            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: systemPrompt }, { role: "user", content: input } ] });
             const botMessage = { sender: 'bot', text: responseText };
             setMessages(prev => [...prev, botMessage]);
 
@@ -3952,62 +3910,6 @@ const DeveloperManageProject = ({ project, onBack, onWithdrawFunds, onDepositApy
 
 const DeveloperWallet = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('Crypto');
-    const [walletData, setWalletData] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchWalletData = async () => {
-            setIsLoading(true);
-            setError(null);
-            try {
-                // Mock implementation with a 1-second delay to simulate network request
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                const user = Object.values(initialUsers).find(u => u.id === currentUser.id);
-
-                if (user && user.wallet) {
-                     setWalletData(user.wallet);
-                } else {
-                    throw new Error('Operational wallet data not found for this user.');
-                }
-
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        if (currentUser && currentUser.id) {
-            fetchWalletData();
-        }
-    }, [currentUser.id]);
-
-    if (isLoading) {
-        return (
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
-                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-lg font-semibold text-gray-700">Loading Wallet Data...</p>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
-                 <p className="text-red-500 font-semibold">Error: {error}</p>
-            </div>
-        );
-    }
-    
-    if (!walletData) {
-         return (
-            <div className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto text-center">
-                 <p className="text-gray-600">No wallet data available.</p>
-            </div>
-        );
-    }
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
@@ -4029,7 +3931,7 @@ const DeveloperWallet = ({ currentUser }) => {
                     </button>
                 </nav>
             </div>
-            {activeTab === 'Crypto' ? <CryptoWallet wallet={walletData} /> : <FiatWallet wallet={walletData} />}
+            {activeTab === 'Crypto' ? <CryptoWallet wallet={currentUser.wallet} /> : <FiatWallet wallet={currentUser.wallet} />}
         </div>
     );
 };
@@ -4183,7 +4085,7 @@ const DeveloperCreateProject = ({ onCreateProject }) => {
             Highlight the key selling points and investment potential. Keep it to one or two paragraphs.`;
 
             
-            const generatedText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const generatedText = await callAIAPI(userPrompt);
             
             setFormData(prev => ({...prev, description: generatedText }));
 
@@ -4879,7 +4781,7 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
     const generateSummary = async () => {
         setSummary({ text: '', isLoading: true, error: '' });
         try {
-            const systemPrompt = `You are a meticulous financial analyst and due diligence officer for a real estate crowdfunding platform named Kayzera. Your task is to review a new project submission and provide a concise summary and a risk analysis for the admin. Use the provided data and grounded search results to inform your analysis. Structure your response with a "Project Summary" section and a "Potential Risks & Due Diligence Points" section with bullet points.`;
+            const systemPrompt = `You are a meticulous financial analyst and due diligence officer for a real estate crowdfunding platform named Kayzera. Your task is to review a new project submission and provide a concise summary and a risk analysis for the admin. Use the provided data and grounded search results to inform your analysis. Structure your response with a "Project Summary" section and a "Potential Risks & Due diligence Points" section with bullet points.`;
             
             const userPrompt = `Please analyze the following project submission:
             - Project Title: ${project.title}
@@ -4894,7 +4796,7 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
             Based on this information and any publicly available data about the location or developer, generate a summary and risk analysis.`;
 
              
-            const responseText = await callAIAPI({ messages: [ { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." }, { role: "user", content: JSON.stringify(payload) } ] });
+            const responseText = await callAIAPI({ messages: [ { role: "system", content: systemPrompt }, { role: "user", content: userPrompt } ] });
             setSummary({ text: responseText, isLoading: false, error: '' });
         } catch(e) {
             setSummary({ text: '', isLoading: false, error: 'Failed to generate summary. Please check the connection and try again.' });
@@ -5015,32 +4917,93 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
 };
 
 const AdminUserManagement = ({ users }) => {
+    const [selectedUser, setSelectedUser] = useState(null);
+
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">User Management</h2>
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                     <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                     <tbody className="bg-white divide-y divide-gray-200">
-                        {Object.values(users).map(user => (
-                             <tr key={user.id}>
-                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
-                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{user.type}</td>
-                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                     <button className="text-indigo-600 hover:text-indigo-900">View Details</button>
-                                 </td>
-                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-bold text-gray-800 mb-4">User Management</h2>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                         <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                         <tbody className="bg-white divide-y divide-gray-200">
+                            {Object.values(users).map(user => (
+                                 <tr key={user.id}>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{user.type}</td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                         <button onClick={() => setSelectedUser(user)} className="text-indigo-600 hover:text-indigo-900">View Details</button>
+                                     </td>
+                                 </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {selectedUser && (
+                <AdminUserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+            )}
+        </>
+    );
+};
+
+const AdminUserDetailsModal = ({ user, onClose }) => {
+    if (!user) return null;
+
+    const kycStatusClasses = {
+        'Verified': 'bg-green-100 text-green-800',
+        'Pending': 'bg-yellow-100 text-yellow-800',
+        'Not Submitted': 'bg-gray-100 text-gray-800',
+        'Rejected': 'bg-red-100 text-red-800'
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
+                <div className="p-4 border-b flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-800">{user.name}'s Details</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200">
+                        <XIcon className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="p-6 space-y-6">
+                    <div>
+                        <h4 className="text-md font-bold text-gray-700 mb-2">User Information</h4>
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm border">
+                            <div className="flex justify-between"><span className="text-gray-600">Email:</span><span className="font-medium">{user.email}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">Role:</span><span className="font-medium capitalize">{user.type}</span></div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-600">KYC Status:</span>
+                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${kycStatusClasses[user.kycStatus] || kycStatusClasses['Not Submitted']}`}>
+                                    {user.kycStatus}
+                                </span>
+                            </div>
+                            <div className="flex justify-between"><span className="text-gray-600">2FA Enabled:</span><span className="font-medium">{user.twoFactorEnabled ? 'Yes' : 'No'}</span></div>
+                        </div>
+                    </div>
+                    {user.wallet && (
+                         <div>
+                            <h4 className="text-md font-bold text-gray-700 mb-2">Wallet Balances</h4>
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm border">
+                                <div className="flex justify-between"><span className="text-gray-600">NGN:</span><span className="font-medium">{formatNgnCurrency(user.wallet.ngn)}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">USDT:</span><span className="font-medium">{user.wallet.usdt.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span className="text-gray-600">USDC:</span><span className="font-medium">{user.wallet.usdc.toFixed(2)}</span></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                <div className="p-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
+                    <button onClick={() => alert(`Suspending user: ${user.name}`)} className="bg-yellow-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-yellow-600 text-sm">Suspend User</button>
+                    <button onClick={() => alert(`Password reset link sent to: ${user.email}`)} className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700 text-sm">Reset Password</button>
+                </div>
             </div>
         </div>
     );
@@ -5790,6 +5753,10 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
 
 
 
