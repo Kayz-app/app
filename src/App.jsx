@@ -1,239 +1,95 @@
-     
-
-    import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 // --- MOCK DATA --- //
 // In a real application, this data would come from a secure backend and blockchain.
 
-const initialUsers = {
-  'investor@demo.com': { 
-    id: 1, 
-    type: 'investor', 
-    name: 'Ada Lovelace', 
-    email: 'investor@demo.com', 
-    password: 'password123', 
-    wallet: { ngn: 5000000, usdt: 1250.50, usdc: 800.25 },
-    kycStatus: 'Verified', // 'Not Submitted', 'Pending', 'Verified'
-    twoFactorEnabled: true,
-    isSuspended: false,
-  },
-  'developer@demo.com': { 
-    id: 2, 
-    type: 'developer', 
-    name: 'Charles Babbage', 
-    email: 'developer@demo.com', 
-    password: 'password123', 
-    wallet: { ngn: 1200000, usdt: 500, usdc: 100 },
-    companyProfile: {
-        name: 'Babbage Constructions Ltd.',
-        regNumber: 'RC123456',
-        address: '1 Innovation Drive, Yaba, Lagos',
-        website: 'https://babbageconstructions.com',
-    },
-    twoFactorEnabled: false,
-    treasuryAddress: '0x1234ABCD5678EFGH9101KLMN1213OPQR1415STUV', // Collected during KYC
-    isSuspended: false,
-  },
-  'admin@demo.com': { id: 3, type: 'admin', name: 'Admin Grace Hopper', email: 'admin@demo.com', password: 'password123', wallet: { ngn: 0, usdt: 0, usdc: 0 }, isSuspended: false },
-  'buyer@demo.com': { 
-    id: 4, 
-    type: 'investor', 
-    name: 'Bayo Adekunle', 
-    email: 'buyer@demo.com', 
-    password: 'password123', 
-    wallet: { ngn: 2500000, usdt: 2000, usdc: 1500 },
-    kycStatus: 'Not Submitted',
-    twoFactorEnabled: false,
-    isSuspended: false,
-  },
-};
-
-const initialProjects = [
-  {
-    id: 1,
-    title: 'Lekki Pearl Residence',
-    tokenTicker: 'LPR',
-    tokenSupply: 250000,
-    developerId: 2,
-    developerName: 'Charles Babbage',
-    location: 'Lekki, Lagos',
-    fundingGoal: 250000,
-    amountRaised: 250000, // Fully funded
-    apy: 15,
-    term: 24, // months
-    startDate: '2022-03-01T00:00:00Z', // MODIFIED: Set date to the past so term has ended
-    description: 'A premium residential complex featuring 50 luxury apartments with state-of-the-art facilities. Located in the heart of Lekki, it promises high rental yield and capital appreciation. The property includes a swimming pool, a fully-equipped gym, and 24/7 security.',
-    imageUrl: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2000',
-    images: [
-        'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=2000',
-        'https://images.unsplash.com/photo-1600585152220-90363fe7e115?q=80&w=2000',
-        'https://images.unsplash.com/photo-1570129477492-45c003edd2e7?q=80&w=2000',
-        'https://images.unsplash.com/photo-1605276374104-5de67d60924f?q=80&w=2000',
-    ],
-    status: 'funded', // 'pending', 'active', 'funded', 'completed'
-    projectWalletBalance: 5000, // For APY payments
-    completionDate: '2024-05-15T00:00:00Z',
-    fundsWithdrawn: true,
-  },
-  {
-    id: 2,
-    title: 'Eko Atlantic Tower',
-    tokenTicker: 'EAT',
-    tokenSupply: 1000000,
-    developerId: 2,
-    developerName: 'Charles Babbage',
-    location: 'Eko Atlantic, Lagos',
-    fundingGoal: 1000000,
-    amountRaised: 450000,
-    apy: 18,
-    term: 36,
-    startDate: '2023-09-10T00:00:00Z',
-    description: 'A visionary skyscraper that will redefine the Lagos skyline. This mixed-use development includes commercial, residential, and recreational spaces, offering unparalleled views and luxury living.',
-    imageUrl: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000',
-    images: [
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000',
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2000',
-        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=2000',
-    ],
-    status: 'active',
-    projectWalletBalance: 12000,
-    fundsWithdrawn: false,
-  },
-  {
-    id: 3,
-    title: 'Abuja Smart City Villas',
-    tokenTicker: 'ASV',
-    tokenSupply: 500000,
-    developerId: 2,
-    developerName: 'Charles Babbage',
-    location: 'Gwarinpa, Abuja',
-    fundingGoal: 500000,
-    amountRaised: 150000,
-    apy: 16.5,
-    term: 30,
-    description: 'An exclusive community of 20 smart homes in a serene district of Abuja, designed for modern living and sustainable luxury. Each villa is equipped with the latest smart home technology for comfort and security.',
-    imageUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2000',
-    images: [
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2000',
-        'https://images.unsplash.com/photo-1600585153492-3f19d532b259?q=80&w=2000',
-        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2000',
-    ],
-    status: 'active',
-    projectWalletBalance: 0,
-    fundsWithdrawn: false,
-  },
-  {
-    id: 4,
-    title: 'Ikeja Tech Hub',
-    tokenTicker: 'ITH',
-    tokenSupply: 300000,
-    developerId: 2,
-    developerName: 'Charles Babbage',
-    location: 'Ikeja, Lagos',
-    fundingGoal: 300000,
-    amountRaised: 0,
-    apy: 17,
-    term: 36,
-    description: 'A state-of-the-art co-working and innovation hub in the heart of Ikeja Computer Village. Designed to foster collaboration and growth for tech startups, offering flexible office spaces, event halls, and networking opportunities.',
-    imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000',
-    images: [
-        'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000',
-        'https://images.unsplash.com/photo-1521737852577-684822188716?q=80&w=2000',
-        'https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?q=80&w=2000',
-    ],
-    status: 'pending', // Submitted for admin approval
-    projectWalletBalance: 0,
-    fundsWithdrawn: false,
-  },
-];
-
-// This structure represents token ownership.
-const initialPortfolios = {
-  1: { // Ada Lovelace's portfolio
-    tokens: [
-      { tokenId: 'proj1-sec-1', projectId: 1, type: 'SECURITY', amount: 5000, originalOwnerId: 1, lastApyClaimDate: '2025-08-05T00:00:00Z' },
-      { tokenId: 'proj1-mkt-1', projectId: 1, type: 'MARKET', amount: 5000, ownerId: 1, status: 'held' }, // status: 'held' or 'listed'
-      { tokenId: 'proj2-sec-1', projectId: 2, type: 'SECURITY', amount: 10000, originalOwnerId: 1, lastApyClaimDate: '2025-09-01T00:00:00Z' },
-      { tokenId: 'proj2-mkt-1', projectId: 2, type: 'MARKET', amount: 10000, ownerId: 1, status: 'held' },
-    ]
-  },
-  4: { // Bayo Adekunle's portfolio
-    tokens: [
-        { tokenId: 'proj1-sec-2', projectId: 1, type: 'SECURITY', amount: 2500, originalOwnerId: 4, lastApyClaimDate: '2025-07-20T00:00:00Z' },
-        { tokenId: 'proj1-mkt-2', projectId: 1, type: 'MARKET', amount: 2500, ownerId: 4, status: 'held' },
-    ]
-  }
-};
-
-// Represents tokens listed on the secondary market
-const initialMarketListings = [
-    { listingId: 1, tokenId: 'proj2-mkt-1', sellerId: 1, projectId: 2, amount: 2000, price: 2100 } // Ada is selling 2000 of her market tokens for project 2 at a premium
-];
-
-
-// --- MOCKED AI API INTEGRATION --- //
-// In a real application, this function would make a secure call to a backend endpoint.
-// Since this is a self-contained frontend prototype, we are mocking the AI response
-// to prevent network errors and demonstrate the AI-powered features.
-const getMockAIResponse = (promptText) => {
-    const lowercasedPrompt = promptText.toLowerCase();
-
-    if (lowercasedPrompt.includes('generate a compelling and professional real estate project description')) {
-        return `This premier residential complex represents a unique investment opportunity in one of the city's most prestigious neighborhoods. Featuring state-of-the-art amenities and breathtaking views, the development is meticulously designed for modern living. It promises not only a high rental yield but also significant capital appreciation, making it a cornerstone asset for any forward-thinking investor's portfolio.`;
-    }
-    
-    if (lowercasedPrompt.includes('financial analyst') && lowercasedPrompt.includes('risk analysis')) {
-        return `### Project Summary
-
-The project is well-positioned within a high-growth corridor, tapping into the consistent demand for premium residential and commercial spaces. The developer's strong track record and the project's solid financial modeling suggest a favorable risk-reward profile. The proposed APY is competitive and sustainable based on market comparables.
-
-### Potential Risks & Due Diligence Points
-- **Execution Risk:** As with any large-scale construction, there is a risk of timeline or budget overruns. Reviewing the developer's history with similar projects is advised.
-- **Market Saturation:** A comprehensive analysis of the local market's absorption rate for new properties should be conducted to ensure demand remains high.
-- **Economic Headwinds:** A broader economic downturn could affect property values and rental income. This risk is partially mitigated by the project's premium positioning.`;
-    }
-    
-    if (lowercasedPrompt.includes('investment potential')) {
-        return `The investment potential is significant, driven by three key factors: the strategic location in a rapidly developing area, the high quality of the build which commands premium rental and resale values, and the attractive APY which provides steady cash flow. While all investments carry risk, this project is structured to maximize returns.`;
-    }
-
-    if (lowercasedPrompt.includes('location') || lowercasedPrompt.includes('area')) {
-         return `The property is located in a prime, high-demand area known for its excellent connectivity, social amenities, and security. This makes it highly attractive to potential tenants and buyers, which is a strong factor in its long-term value.`;
-    }
-
-    // Default chat response
-    return "I can certainly help with that. Based on the provided project documents, the key strengths are its strategic location and the developer's established reputation. The financial projections indicate a solid return on investment. What specific aspect would you like to know more about?";
-};
-
+// --- REAL AI API INTEGRATION (OpenAI) --- //
+// This function makes a secure call to the OpenAI API with retry logic.
 const callAIAPI = async (input, options = {}) => {
-    console.log("--- Mock AI API Call Triggered ---");
+    // IMPORTANT: Replace this with your actual OpenAI API key.
+    // In a real production application, this key should be stored securely on a backend server,
+    // and the API call should be made from there, not directly from the client-side.
+    const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY_HERE'; 
+
+    if (OPENAI_API_KEY === 'YOUR_OPENAI_API_KEY_HERE') {
+        return "OpenAI API key is not configured. Please add your key to the app.jsx file to enable this feature.";
+    }
+
+    // Helper function for exponential backoff
+    const fetchWithRetry = async (payload, retries = 5, delay = 1000) => {
+        const apiUrl = `https://api.openai.com/v1/chat/completions`;
+
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                     const errorBody = await response.json();
+                    // Don't retry on client-side errors (4xx), as they are likely permanent.
+                    if (response.status >= 400 && response.status < 500) {
+                        console.error("OpenAI API client error:", errorBody);
+                        throw new Error(`API Error: ${errorBody.error?.message || 'Client error'}`);
+                    }
+                    // For server-side errors (5xx), it will fall through to the catch block and retry
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const result = await response.json();
+                const messageContent = result.choices?.[0]?.message?.content;
+                
+                if (messageContent) {
+                    return messageContent;
+                } else {
+                    console.error("Unexpected OpenAI API response structure:", result);
+                    // This is a successful response but with unexpected data, so we don't retry.
+                    throw new Error("Unexpected API response structure.");
+                }
+
+            } catch (error) {
+                if (i === retries - 1) {
+                    console.error("AI API call failed after all retries.", error);
+                    // Re-throw the final error to be handled by the calling component
+                    throw error; 
+                }
+                // Do not log retries as errors in the console
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2; // Exponentially increase delay
+            }
+        }
+        // This line should not be reachable if retries > 0
+        throw new Error("AI API call failed after all retries.");
+    };
     
-    // Extract the main user prompt text regardless of input format
-    let userPromptText = '';
-    if (typeof input === "string") {
-        userPromptText = input;
-    } else if (input && Array.isArray(input.messages)) {
-        // Find the user message, or join all messages as a fallback
-        const userMessage = input.messages.find(m => m.role === 'user');
-        userPromptText = userMessage ? userMessage.content : input.messages.map(m => m.content).join('\n');
+    // --- Payload Preparation ---
+    let messages = [];
+
+    if (input && Array.isArray(input.messages)) {
+        // Use the structured messages directly
+        messages = input.messages;
+    } else if (typeof input === 'string') {
+        // Convert a simple string input into the correct message format
+        messages.push({ role: "user", content: input });
     } else {
         // Fallback for unexpected formats
-        userPromptText = JSON.stringify(input);
+        throw new Error("Invalid input format for AI API call.");
     }
     
-    console.log("User Prompt:", userPromptText);
+    // Construct the payload for the OpenAI API
+    const payload = {
+        model: "gpt-3.5-turbo",
+        messages: messages,
+    };
 
-    return new Promise((resolve) => {
-        // Simulate network latency for a more realistic feel
-        setTimeout(() => {
-            const mockResponse = getMockAIResponse(userPromptText);
-            console.log("Generated Mock Response:", mockResponse);
-            resolve(mockResponse);
-        }, 1200 + Math.random() * 800); // 1.2s to 2s delay
-    });
+    // Call the retry wrapper and return its result
+    return await fetchWithRetry(payload);
 };
-
-
 
 
 // --- SVG ICONS AS REACT COMPONENTS --- //
@@ -5185,6 +5041,9 @@ export default function App() {
     const [page, setPage] = useState('landing'); // landing, login, register, forgotPassword, investorDashboard, etc.
     const [currentUser, setCurrentUser] = useState(null);
     const [users, setUsers] = useState(() => {
+        // On first load, try to get users from localStorage.
+        // In a real app, this initial state would likely be an empty object,
+        // and users would be fetched from your backend API.
         const saved = localStorage.getItem('kayzeraUsers');
         if (saved) {
             try {
@@ -5193,24 +5052,13 @@ export default function App() {
                 console.error("Could not parse users from localStorage", e);
             }
         }
-        return initialUsers;
+        // If nothing in localStorage, start with an empty object.
+        return {};
     });
-    const [projects, setProjects] = useState(initialProjects);
-    const [portfolios, setPortfolios] = useState(initialPortfolios);
-    const [marketListings, setMarketListings] = useState(initialMarketListings);
-    const [userActivities, setUserActivities] = useState({
-        1: [ // Ada Lovelace's initial activities
-            { id: 1, type: 'Investment', project: 'Eko Atlantic Tower', amount: -10000, date: '2025-09-01T10:00:00Z' },
-            { id: 2, type: 'APY Claim', project: 'Lekki Pearl Residence', amount: 62.50, date: '2025-08-05T11:00:00Z' },
-            { id: 3, type: 'Deposit', project: 'USD Wallet', amount: 25000, date: '2025-07-15' },
-        ],
-        2: [ // Charles Babbage's initial activities
-            { id: 1, type: 'Project Submitted', project: 'Ikeja Tech Hub', amount: 0, date: '2025-09-25T14:00:00Z', description: 'Submitted for admin approval.' },
-            { id: 2, type: 'Funds Withdrawn', project: 'Lekki Pearl Residence', amount: 242500, date: '2025-09-10T11:00:00Z' },
-            { id: 3, type: 'APY Wallet Deposit', project: 'Eko Atlantic Tower', amount: -12000, date: '2025-09-09T15:30:00Z' },
-        ],
-        4: [], // Bayo Adekunle starts with no activities
-    });
+    const [projects, setProjects] = useState([]);
+    const [portfolios, setPortfolios] = useState({});
+    const [marketListings, setMarketListings] = useState([]);
+    const [userActivities, setUserActivities] = useState({});
 
     const USD_NGN_RATE = 1500;
 
@@ -5814,6 +5662,8 @@ export default function App() {
         </div>
     );
 }
+
+
 
 
 
