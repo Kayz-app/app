@@ -15,6 +15,7 @@ const initialUsers = {
     wallet: { ngn: 5000000, usdt: 1250.50, usdc: 800.25 },
     kycStatus: 'Verified', // 'Not Submitted', 'Pending', 'Verified'
     twoFactorEnabled: true,
+    isSuspended: false,
   },
   'developer@demo.com': { 
     id: 2, 
@@ -31,8 +32,9 @@ const initialUsers = {
     },
     twoFactorEnabled: false,
     treasuryAddress: '0x1234ABCD5678EFGH9101KLMN1213OPQR1415STUV', // Collected during KYC
+    isSuspended: false,
   },
-  'admin@demo.com': { id: 3, type: 'admin', name: 'Admin Grace Hopper', email: 'admin@demo.com', password: 'password123', wallet: { ngn: 0, usdt: 0, usdc: 0 } },
+  'admin@demo.com': { id: 3, type: 'admin', name: 'Admin Grace Hopper', email: 'admin@demo.com', password: 'password123', wallet: { ngn: 0, usdt: 0, usdc: 0 }, isSuspended: false },
   'buyer@demo.com': { 
     id: 4, 
     type: 'investor', 
@@ -42,6 +44,7 @@ const initialUsers = {
     wallet: { ngn: 2500000, usdt: 2000, usdc: 1500 },
     kycStatus: 'Not Submitted',
     twoFactorEnabled: false,
+    isSuspended: false,
   },
 };
 
@@ -168,79 +171,66 @@ const initialMarketListings = [
 ];
 
 
-// --- AI API INTEGRATION (SECURE VIA BACKEND) --- //
+// --- MOCKED AI API INTEGRATION --- //
+// In a real application, this function would make a secure call to a backend endpoint.
+// Since this is a self-contained frontend prototype, we are mocking the AI response
+// to prevent network errors and demonstrate the AI-powered features.
+const getMockAIResponse = (promptText) => {
+    const lowercasedPrompt = promptText.toLowerCase();
 
-// Instead of calling OpenAI directly with the API key from the frontend (which is insecure),
-// this function now calls a backend endpoint (`/api/ai`) that safely holds the API key.
-// You must implement the `/api/ai` endpoint in your backend (Node/Express, Next.js API routes, etc.).
-
-// --- AI API INTEGRATION (SECURE + COMPATIBLE) --- //
-// callAIAPI now accepts either:
-// - a string (plain user prompt)
-// - an OpenAI-style { messages: [...] } object
-// It normalizes the input and sends either `messages` or `prompt` to the backend `/api/ai`.
-// The backend should accept either `{ messages }` (OpenAI style) or `{ prompt }` (string) and call OpenAI accordingly.
-
-// --- AI API INTEGRATION (OPENAI ONLY, SECURE) --- //
-// callAIAPI now strictly uses OpenAI's messages format.
-// Always supply either a string prompt (which will be wrapped) or a { messages } array.
-// The backend (/api/ai) will receive { messages } and must forward them to OpenAI securely.
-const callAIAPI = async (input, options = {}) => {
-    try {
-        let bodyToSend;
-
-        if (typeof input === "string") {
-            bodyToSend = {
-                messages: [
-                    { role: "system", content: "You are an AI assistant that helps with real estate due diligence and investment analysis." },
-                    { role: "user", content: input }
-                ]
-            };
-        } else if (input && Array.isArray(input.messages)) {
-            bodyToSend = { messages: input.messages };
-        } else {
-            // Fallback: wrap unknown input
-            bodyToSend = {
-                messages: [
-                    { role: "system", content: "You are an AI assistant." },
-                    { role: "user", content: JSON.stringify(input) }
-                ]
-            };
-        }
-
-        // Merge options (like temperature, model) if provided
-        if (options && typeof options === "object") {
-            bodyToSend = { ...bodyToSend, ...options };
-        }
-
-        const resp = await fetch("/api/ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(bodyToSend),
-        });
-
-        if (!resp.ok) {
-            let errBody;
-            try { errBody = await resp.json(); } catch (e) { errBody = await resp.text(); }
-            throw new Error(`Backend AI API Error: ${resp.status} - ${JSON.stringify(errBody)}`);
-        }
-
-        const data = await resp.json();
-
-        if (Array.isArray(data.choices) && data.choices[0]?.message?.content) {
-            return data.choices[0].message.content;
-        }
-        if (Array.isArray(data.choices) && typeof data.choices[0]?.text === "string") {
-            return data.choices[0].text;
-        }
-        if (typeof data.text === "string") return data.text;
-        if (typeof data.content === "string") return data.content;
-
-        return JSON.stringify(data);
-    } catch (err) {
-        console.error("callAIAPI error:", err);
-        throw err;
+    if (lowercasedPrompt.includes('generate a compelling and professional real estate project description')) {
+        return `This premier residential complex represents a unique investment opportunity in one of the city's most prestigious neighborhoods. Featuring state-of-the-art amenities and breathtaking views, the development is meticulously designed for modern living. It promises not only a high rental yield but also significant capital appreciation, making it a cornerstone asset for any forward-thinking investor's portfolio.`;
     }
+    
+    if (lowercasedPrompt.includes('financial analyst') && lowercasedPrompt.includes('risk analysis')) {
+        return `### Project Summary
+
+The project is well-positioned within a high-growth corridor, tapping into the consistent demand for premium residential and commercial spaces. The developer's strong track record and the project's solid financial modeling suggest a favorable risk-reward profile. The proposed APY is competitive and sustainable based on market comparables.
+
+### Potential Risks & Due Diligence Points
+- **Execution Risk:** As with any large-scale construction, there is a risk of timeline or budget overruns. Reviewing the developer's history with similar projects is advised.
+- **Market Saturation:** A comprehensive analysis of the local market's absorption rate for new properties should be conducted to ensure demand remains high.
+- **Economic Headwinds:** A broader economic downturn could affect property values and rental income. This risk is partially mitigated by the project's premium positioning.`;
+    }
+    
+    if (lowercasedPrompt.includes('investment potential')) {
+        return `The investment potential is significant, driven by three key factors: the strategic location in a rapidly developing area, the high quality of the build which commands premium rental and resale values, and the attractive APY which provides steady cash flow. While all investments carry risk, this project is structured to maximize returns.`;
+    }
+
+    if (lowercasedPrompt.includes('location') || lowercasedPrompt.includes('area')) {
+         return `The property is located in a prime, high-demand area known for its excellent connectivity, social amenities, and security. This makes it highly attractive to potential tenants and buyers, which is a strong factor in its long-term value.`;
+    }
+
+    // Default chat response
+    return "I can certainly help with that. Based on the provided project documents, the key strengths are its strategic location and the developer's established reputation. The financial projections indicate a solid return on investment. What specific aspect would you like to know more about?";
+};
+
+const callAIAPI = async (input, options = {}) => {
+    console.log("--- Mock AI API Call Triggered ---");
+    
+    // Extract the main user prompt text regardless of input format
+    let userPromptText = '';
+    if (typeof input === "string") {
+        userPromptText = input;
+    } else if (input && Array.isArray(input.messages)) {
+        // Find the user message, or join all messages as a fallback
+        const userMessage = input.messages.find(m => m.role === 'user');
+        userPromptText = userMessage ? userMessage.content : input.messages.map(m => m.content).join('\n');
+    } else {
+        // Fallback for unexpected formats
+        userPromptText = JSON.stringify(input);
+    }
+    
+    console.log("User Prompt:", userPromptText);
+
+    return new Promise((resolve) => {
+        // Simulate network latency for a more realistic feel
+        setTimeout(() => {
+            const mockResponse = getMockAIResponse(userPromptText);
+            console.log("Generated Mock Response:", mockResponse);
+            resolve(mockResponse);
+        }, 1200 + Math.random() * 800); // 1.2s to 2s delay
+    });
 };
 
 
@@ -820,6 +810,10 @@ const LoginPage = ({ setPage, setCurrentUser, users }) => {
         e.preventDefault();
         const user = users[email];
         if (user && user.password === password) {
+            if (user.isSuspended) {
+                setError('This account has been suspended.');
+                return;
+            }
             setCurrentUser(user);
             let dashboardPage;
             switch (user.type) {
@@ -4090,7 +4084,7 @@ const DeveloperCreateProject = ({ onCreateProject }) => {
             setFormData(prev => ({...prev, description: generatedText }));
 
         } catch (error) {
-            setGenerationError('Failed to generate description. Please try again.');
+            setGenerationError(error.message || 'Failed to generate description. Please try again.');
         } finally {
             setIsGenerating(false);
         }
@@ -4622,7 +4616,7 @@ const AdminSettings = () => {
     );
 };
 
-const AdminDashboard = ({ currentUser, projects, users, onLogout, totalBalance, onUpdateProjectStatus }) => {
+const AdminDashboard = ({ currentUser, projects, users, onLogout, totalBalance, onUpdateProjectStatus, onUpdateUser }) => {
      const [activeItem, setActiveItem] = useState('Dashboard');
 
     const sidebarItems = [
@@ -4637,7 +4631,7 @@ const AdminDashboard = ({ currentUser, projects, users, onLogout, totalBalance, 
         switch (activeItem) {
             case 'Dashboard': return <AdminDashboardOverview users={users} projects={projects} />;
             case 'Project Approvals': return <AdminProjectApprovals projects={projects} onUpdateProjectStatus={onUpdateProjectStatus} />;
-            case 'User Management': return <AdminUserManagement users={users} />;
+            case 'User Management': return <AdminUserManagement users={users} onUpdateUser={onUpdateUser} />;
             case 'Compliance': return <AdminCompliance users={users} />;
             case 'Settings': return <AdminSettings />;
             default: return <AdminDashboardOverview users={users} projects={projects} />;
@@ -4799,7 +4793,7 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
             const responseText = await callAIAPI({ messages: [ { role: "system", content: systemPrompt }, { role: "user", content: userPrompt } ] });
             setSummary({ text: responseText, isLoading: false, error: '' });
         } catch(e) {
-            setSummary({ text: '', isLoading: false, error: 'Failed to generate summary. Please check the connection and try again.' });
+            setSummary({ text: '', isLoading: false, error: e.message || 'Failed to generate summary. Please try again.' });
         }
     };
 
@@ -4916,7 +4910,7 @@ const AdminProjectDetails = ({ project, onUpdateProjectStatus, onBack }) => {
     );
 };
 
-const AdminUserManagement = ({ users }) => {
+const AdminUserManagement = ({ users, onUpdateUser }) => {
     const [selectedUser, setSelectedUser] = useState(null);
 
     return (
@@ -4936,7 +4930,10 @@ const AdminUserManagement = ({ users }) => {
                          <tbody className="bg-white divide-y divide-gray-200">
                             {Object.values(users).map(user => (
                                  <tr key={user.id}>
-                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.name}</td>
+                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 flex items-center">
+                                        {user.name}
+                                        {user.isSuspended && <span className="ml-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Suspended</span>}
+                                     </td>
                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{user.type}</td>
                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -4949,14 +4946,39 @@ const AdminUserManagement = ({ users }) => {
                 </div>
             </div>
             {selectedUser && (
-                <AdminUserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+                <AdminUserDetailsModal user={selectedUser} onClose={() => setSelectedUser(null)} onUpdateUser={onUpdateUser} />
             )}
         </>
     );
 };
 
-const AdminUserDetailsModal = ({ user, onClose }) => {
+const AdminUserDetailsModal = ({ user, onClose, onUpdateUser }) => {
+    const [actionFeedback, setActionFeedback] = useState('');
+
+    useEffect(() => {
+        // Reset feedback when the modal is opened with a new user
+        setActionFeedback('');
+    }, [user]);
+
     if (!user) return null;
+
+    const handleSuspend = () => {
+        if (user.type === 'admin') {
+            setActionFeedback('Admin accounts cannot be suspended.');
+            return;
+        }
+        onUpdateUser(user.id, { isSuspended: true });
+        setActionFeedback(`User ${user.name} has been suspended.`);
+    };
+
+    const handleUnsuspend = () => {
+        onUpdateUser(user.id, { isSuspended: false });
+        setActionFeedback(`User ${user.name} has been unsuspended.`);
+    };
+
+    const handleResetPassword = () => {
+        setActionFeedback(`Password reset link sent to ${user.email}.`);
+    };
 
     const kycStatusClasses = {
         'Verified': 'bg-green-100 text-green-800',
@@ -4987,6 +5009,7 @@ const AdminUserDetailsModal = ({ user, onClose }) => {
                                 </span>
                             </div>
                             <div className="flex justify-between"><span className="text-gray-600">2FA Enabled:</span><span className="font-medium">{user.twoFactorEnabled ? 'Yes' : 'No'}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-600">Status:</span><span className={`font-medium ${user.isSuspended ? 'text-red-600' : 'text-green-600'}`}>{user.isSuspended ? 'Suspended' : 'Active'}</span></div>
                         </div>
                     </div>
                     {user.wallet && (
@@ -5000,9 +5023,31 @@ const AdminUserDetailsModal = ({ user, onClose }) => {
                         </div>
                     )}
                 </div>
-                <div className="p-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
-                    <button onClick={() => alert(`Suspending user: ${user.name}`)} className="bg-yellow-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-yellow-600 text-sm">Suspend User</button>
-                    <button onClick={() => alert(`Password reset link sent to: ${user.email}`)} className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700 text-sm">Reset Password</button>
+                <div className="p-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3 items-center min-h-[68px]">
+                    {actionFeedback ? (
+                        <p className="text-sm font-semibold text-green-700 flex-1 text-center">{actionFeedback}</p>
+                    ) : (
+                        <>
+                            {user.type !== 'admin' && (
+                                user.isSuspended ? (
+                                    <button
+                                        onClick={handleUnsuspend}
+                                        className="bg-green-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-green-600 text-sm"
+                                    >
+                                        Unsuspend User
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleSuspend}
+                                        className="bg-yellow-500 text-white px-4 py-2 rounded-md font-semibold hover:bg-yellow-600 text-sm"
+                                    >
+                                        Suspend User
+                                    </button>
+                                )
+                            )}
+                            <button onClick={handleResetPassword} className="bg-red-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-red-700 text-sm">Reset Password</button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -5290,6 +5335,22 @@ export default function App() {
             ...prevUsers,
             [newUser.email]: newUser
         }));
+    };
+
+    const handleUpdateUser = (userId, updates) => {
+        setUsers(prevUsers => {
+            const userEntry = Object.entries(prevUsers).find(([, user]) => user.id === userId);
+            if (userEntry) {
+                const [email, user] = userEntry;
+                const updatedUser = { ...user, ...updates };
+                // Also update currentUser if they are the one being updated
+                if (currentUser && currentUser.id === userId) {
+                    setCurrentUser(updatedUser);
+                }
+                return { ...prevUsers, [email]: updatedUser };
+            }
+            return prevUsers;
+        });
     };
 
     const handleUpdateProjectStatus = (projectId, newStatus) => {
@@ -5720,7 +5781,7 @@ export default function App() {
             switch (currentUser.type) {
                 case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} activities={activities} onExchange={handleCurrencyExchange} />;
                 case 'developer': return <DeveloperDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} totalBalance={totalBalance} activities={activities} onCreateProject={handleCreateProject} onWithdrawFunds={handleWithdrawFunds} onDepositApyFunds={handleDepositApyFunds} />;
-                case 'admin': return <AdminDashboard currentUser={currentUser} projects={projects} users={users} onLogout={handleLogout} totalBalance={totalBalance} onUpdateProjectStatus={handleUpdateProjectStatus} />;
+                case 'admin': return <AdminDashboard currentUser={currentUser} projects={projects} users={users} onLogout={handleLogout} totalBalance={totalBalance} onUpdateProjectStatus={handleUpdateProjectStatus} onUpdateUser={handleUpdateUser} />;
                 default:
                     // The useEffect above will handle logging out the user.
                     // Return null or a loading spinner to avoid rendering with an invalid user state.
@@ -5753,6 +5814,11 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
 
 
 
