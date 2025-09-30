@@ -721,61 +721,252 @@ const LoginPage = ({ setPage, setCurrentUser, users }) => {
 };
 
 const RegisterPage = ({ setPage, onRegister, users }) => {
-    const [accountType, setAccountType] = useState('investor');
-    const [fullName, setFullName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [step, setStep] = useState(1);
     const [error, setError] = useState('');
+    const [formData, setFormData] = useState({
+        accountType: 'investor',
+        fullName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        companyName: '',
+        regNumber: '',
+        companyAddress: '',
+        website: '',
+        treasuryAddress: '',
+    });
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+    
+    const setAccountType = (type) => {
+        setFormData(prev => ({ ...prev, accountType: type }));
+        setStep(1); // Reset to step 1 when type changes
+        setError('');
+    };
+
+    const nextStep = () => {
+        setError('');
+        if (formData.accountType === 'developer') {
+            if (step === 1) {
+                if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+                    setError('All personal information fields are required.');
+                    return;
+                }
+                if (formData.password !== formData.confirmPassword) {
+                    setError('Passwords do not match.');
+                    return;
+                }
+                if (users[formData.email]) {
+                    setError('An account with this email already exists.');
+                    return;
+                }
+            }
+            if (step === 2) {
+                if (!formData.companyName || !formData.regNumber || !formData.companyAddress) {
+                    setError('Company Name, Registration Number, and Address are required.');
+                    return;
+                }
+            }
+        }
+        setStep(step + 1);
+    };
+
+    const prevStep = () => setStep(step - 1);
 
     const handleRegister = (e) => {
         e.preventDefault();
         setError('');
 
-        // Basic validation
-        if (!fullName || !email || !password || !confirmPassword) {
-            setError('All fields are required.');
-            return;
-        }
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            return;
-        }
-        if (users[email]) {
-            setError('An account with this email already exists.');
-            return;
-        }
-
-        // Create new user object
-        const newUser = {
-            id: Object.keys(users).length + 1,
-            type: accountType,
-            name: fullName,
-            email: email,
-            password: password, // In a real app, this should be hashed on the backend
-            wallet: { ngn: 0, usdt: 0, usdc: 0 },
-            kycStatus: 'Not Submitted',
-            twoFactorEnabled: false,
-        };
-
-        if (accountType === 'developer') {
-            newUser.companyProfile = {
-                name: '',
-                regNumber: '',
-                address: '',
-                website: '',
+        if (formData.accountType === 'investor') {
+            if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
+                setError('All fields are required.');
+                return;
+            }
+            if (formData.password !== formData.confirmPassword) {
+                setError('Passwords do not match.');
+                return;
+            }
+            if (users[formData.email]) {
+                setError('An account with this email already exists.');
+                return;
+            }
+            const newUser = {
+                id: Object.keys(users).length + 1,
+                type: 'investor',
+                name: formData.fullName,
+                email: formData.email,
+                password: formData.password,
+                wallet: { ngn: 0, usdt: 0, usdc: 0 },
+                kycStatus: 'Not Submitted',
+                twoFactorEnabled: false,
+                isSuspended: false,
             };
-            newUser.treasuryAddress = '';
+            onRegister(newUser);
+            alert('Registration successful! Please log in to continue.');
+            setPage('login');
+        } else {
+            if (!formData.treasuryAddress) {
+                setError('Treasury address is required to receive project funds.');
+                return;
+            }
+            const newUser = {
+                id: Object.keys(users).length + 1,
+                type: 'developer',
+                name: formData.fullName,
+                email: formData.email,
+                password: formData.password,
+                wallet: { ngn: 0, usdt: 0, usdc: 0 },
+                kycStatus: 'Pending',
+                twoFactorEnabled: false,
+                isSuspended: false,
+                companyProfile: {
+                    name: formData.companyName,
+                    regNumber: formData.regNumber,
+                    address: formData.companyAddress,
+                    website: formData.website,
+                },
+                treasuryAddress: formData.treasuryAddress,
+            };
+            onRegister(newUser);
+            alert('Developer registration submitted! We will review your application and notify you via email once your account is approved.');
+            setPage('login');
         }
-
-        onRegister(newUser);
-        alert('Registration successful! Please log in to continue.');
-        setPage('login');
     };
+    
+    const FileUploadComponent = ({ label, description }) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-700">{label}</label>
+            <p className="text-xs text-gray-500 mb-2">{description}</p>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div className="space-y-1 text-center">
+                    <FileUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="flex text-sm text-gray-600">
+                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                            <span>Upload file</span>
+                            <input id="file-upload" name="file-upload" type="file" className="sr-only" />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                    </div>
+                    <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                </div>
+            </div>
+        </div>
+    );
+    
+    const renderInvestorForm = () => (
+        <form className="space-y-6" onSubmit={handleRegister}>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <input type="text" name="fullName" required value={formData.fullName} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Email address</label>
+                <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <input type="password" name="password" required value={formData.password} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+            </div>
+            <div>
+                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Account</button>
+            </div>
+        </form>
+    );
 
+    const renderDeveloperForm = () => {
+        switch (step) {
+            case 1:
+                return (
+                    <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center text-gray-800">Personal Information</h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" name="fullName" required value={formData.fullName} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Email address</label>
+                            <input type="email" name="email" required value={formData.email} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Password</label>
+                            <input type="password" name="password" required value={formData.password} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+                            <input type="password" name="confirmPassword" required value={formData.confirmPassword} onChange={handleInputChange} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
+                        </div>
+                        <div className="flex justify-end">
+                            <button type="button" onClick={nextStep} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Next</button>
+                        </div>
+                    </div>
+                );
+            case 2:
+                return (
+                    <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center text-gray-800">Company Details</h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                            <input type="text" name="companyName" required value={formData.companyName} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border rounded-md" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Registration Number</label>
+                            <input type="text" name="regNumber" required value={formData.regNumber} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border rounded-md" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Company Address</label>
+                            <input type="text" name="companyAddress" required value={formData.companyAddress} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border rounded-md" />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Website (Optional)</label>
+                            <input type="url" name="website" value={formData.website} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border rounded-md" />
+                        </div>
+                        <div className="flex justify-between">
+                            <button type="button" onClick={prevStep} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Back</button>
+                            <button type="button" onClick={nextStep} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Next</button>
+                        </div>
+                    </div>
+                );
+            case 3:
+                return (
+                    <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center text-gray-800">Document Upload</h3>
+                        <FileUploadComponent label="Certificate of Incorporation" description="Upload a clear copy of your company's registration certificate."/>
+                        <FileUploadComponent label="Proof of Address" description="A recent utility bill or bank statement showing the company address."/>
+                        <div className="flex justify-between">
+                            <button type="button" onClick={prevStep} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Back</button>
+                            <button type="button" onClick={nextStep} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Next</button>
+                        </div>
+                    </div>
+                );
+            case 4:
+                return (
+                    <form className="space-y-6" onSubmit={handleRegister}>
+                        <h3 className="text-lg font-semibold text-center text-gray-800">Treasury Address</h3>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Base Wallet Address</label>
+                            <p className="text-xs text-gray-500 mb-2">This is the address where funds from your successfully funded projects will be sent. It must be a Base compatible (0x...) address for USDT/USDC.</p>
+                            <input type="text" name="treasuryAddress" required value={formData.treasuryAddress} onChange={handleInputChange} placeholder="0x..." className="mt-1 block w-full px-3 py-2 border rounded-md"/>
+                        </div>
+                        <div className="flex justify-between">
+                            <button type="button" onClick={prevStep} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">Back</button>
+                            <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Submit Application</button>
+                        </div>
+                    </form>
+                );
+            default: return null;
+        }
+    };
+    
     return (
         <AuthPage title="Create a new account" setPage={setPage}>
-             <form className="space-y-6" onSubmit={handleRegister}>
+             <div className="space-y-6">
                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Register as</label>
@@ -784,7 +975,7 @@ const RegisterPage = ({ setPage, onRegister, users }) => {
                             type="button"
                             onClick={() => setAccountType('investor')}
                             className={`w-full inline-flex justify-center items-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium transition-colors ${
-                                accountType === 'investor' 
+                                formData.accountType === 'investor' 
                                 ? 'bg-indigo-600 text-white border-indigo-600' 
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
@@ -796,7 +987,7 @@ const RegisterPage = ({ setPage, onRegister, users }) => {
                             type="button"
                             onClick={() => setAccountType('developer')}
                             className={`w-full inline-flex justify-center items-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium transition-colors ${
-                                accountType === 'developer' 
+                                formData.accountType === 'developer' 
                                 ? 'bg-indigo-600 text-white border-indigo-600' 
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                             }`}
@@ -806,26 +997,18 @@ const RegisterPage = ({ setPage, onRegister, users }) => {
                         </button>
                     </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                    <input type="text" required value={fullName} onChange={e => setFullName(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Email address</label>
-                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-                </div>
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-                    <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
-                </div>
-                 <div>
-                    <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Account</button>
-                </div>
-            </form>
+
+                {formData.accountType === 'developer' && (
+                    <div className="pt-2">
+                        <p className="text-center text-sm font-semibold text-gray-600">Developer Onboarding - Step {step} of 4</p>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                            <div className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style={{ width: `${(step / 4) * 100}%` }}></div>
+                        </div>
+                    </div>
+                )}
+                
+                {formData.accountType === 'investor' ? renderInvestorForm() : renderDeveloperForm()}
+            </div>
              <div className="text-sm text-center mt-4">
                 <p className="text-gray-600">Already have an account? <a href="#" onClick={() => setPage('login')} className="font-medium text-indigo-600 hover:text-indigo-500">Sign in</a></p>
             </div>
@@ -913,7 +1096,21 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
         const isDemoUser = ['investor@demo.com', 'developer@demo.com', 'admin@demo.com', 'buyer@demo.com'].includes(currentUser.email);
 
         if (!isDemoUser) {
-            setNotifications([{ id: 1, text: 'Welcome to Kayzera! Complete your profile to start investing.', read: false, time: 'Just now' }]);
+            if (currentUser.type === 'investor') {
+                setNotifications([
+                    { id: 1, text: 'Complete your KYC verification in Settings to unlock all features.', read: false, time: 'Just now' },
+                    { id: 2, text: 'Fund your wallet to start investing in top real estate projects.', read: false, time: 'Just now' },
+                    { id: 3, text: 'Explore the Marketplace to see available investment opportunities.', read: false, time: 'Just now' },
+                    { id: 4, text: 'Welcome to Kayzera! We\'re glad to have you.', read: true, time: 'Just now' },
+                ]);
+            } else if (currentUser.type === 'developer') {
+                setNotifications([
+                    { id: 1, text: 'Your developer application is under review. We will notify you upon approval.', read: false, time: 'Just now' },
+                    { id: 2, text: 'While you wait, familiarize yourself with the project creation process in the "Create New Project" tab.', read: false, time: 'Just now' },
+                    { id: 3, text: 'Make sure your company profile and treasury address are correct in Settings.', read: false, time: 'Just now' },
+                    { id: 4, text: 'Welcome to the Kayzera developer platform!', read: true, time: 'Just now' },
+                ]);
+            }
             return;
         }
 
@@ -929,7 +1126,6 @@ const DashboardLayout = ({ children, sidebarItems, activeItem, setActiveItem, on
         } else { // Default for investor/developer demo users
             setNotifications([
                 { id: 1, text: 'Your KYC has been approved.', read: false, time: '2h ago' },
-                { id: 2, text: 'Lekki Pearl Residence is now fully funded!', read: false, time: '1d ago' },
                 { id: 3, text: 'Welcome to Kayzera! Complete your profile to start investing.', read: true, time: '3d ago' },
             ]);
         }
@@ -1494,7 +1690,7 @@ const AssetAllocationChart = ({ data }) => {
 };
 
 
-const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, onRedeemPrincipal, totalBalance, activities, onExchange }) => {
+const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, onLogout, onClaimApy, onListToken, onInvest, onRedeemPrincipal, totalBalance, activities, onExchange, onUpdateUser }) => {
     const [activeItem, setActiveItem] = useState('Dashboard');
 
     const sidebarItems = [
@@ -1517,7 +1713,7 @@ const InvestorDashboard = ({ currentUser, projects, portfolios, marketListings, 
                 return isKycVerified 
                     ? <InvestorWallet currentUser={currentUser} /> 
                     : <KycRequired setActiveDashboardItem={setActiveItem} />;
-            case 'Settings': return <InvestorSettings currentUser={currentUser} />;
+            case 'Settings': return <InvestorSettings currentUser={currentUser} onUpdateUser={onUpdateUser} />;
             case 'Help & Support': return <HelpAndSupport currentUser={currentUser} />;
             default: return <InvestorDashboardOverview currentUser={currentUser} projects={projects} portfolios={portfolios} />;
         }
@@ -2173,14 +2369,125 @@ const KycRequired = ({ setActiveDashboardItem }) => {
     );
 };
 
-const InvestorSettings = ({ currentUser }) => {
-    const [activeTab, setActiveTab] = useState('KYC');
+const ProfileSettings = ({ currentUser, onUpdateUser }) => {
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [updateStatus, setUpdateStatus] = useState({ message: '', type: '' }); // type can be 'success' or 'error'
+
+    const handlePasswordChange = (e) => {
+        e.preventDefault();
+        setUpdateStatus({ message: '', type: '' });
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            setUpdateStatus({ message: 'All password fields are required.', type: 'error' });
+            return;
+        }
+
+        if (currentPassword !== currentUser.password) {
+            setUpdateStatus({ message: 'Current password is incorrect.', type: 'error' });
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setUpdateStatus({ message: 'New passwords do not match.', type: 'error' });
+            return;
+        }
+        
+        onUpdateUser(currentUser.id, { password: newPassword });
+        setUpdateStatus({ message: 'Password changed successfully!', type: 'success' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+    };
+    
+    useEffect(() => {
+        let timer;
+        if (updateStatus.message) {
+            timer = setTimeout(() => {
+                setUpdateStatus({ message: '', type: '' });
+            }, 5000);
+        }
+        return () => clearTimeout(timer);
+    }, [updateStatus.message]);
+
+
+    return (
+        <div className="space-y-8">
+            {/* Profile Information */}
+            <div className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-800">Profile Information</h3>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" value={currentUser.name} readOnly className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"/>
+                    <p className="mt-1 text-xs text-gray-500">Full name cannot be changed.</p>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" value={currentUser.email} readOnly className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"/>
+                    <p className="mt-1 text-xs text-gray-500">Email address cannot be changed.</p>
+                </div>
+            </div>
+            
+            <hr />
+
+            {/* Change Password Form */}
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+                <h3 className="text-lg font-bold text-gray-800">Change Password</h3>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Current Password</label>
+                    <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                </div>
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700">New Password</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                </div>
+                 <div className="flex justify-end">
+                    <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700">Change Password</button>
+                </div>
+            </form>
+
+            {updateStatus.message && (
+                 <div className={`text-center p-3 rounded-md text-sm transition-opacity duration-300 ${updateStatus.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {updateStatus.message}
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const InvestorSettings = ({ currentUser, onUpdateUser }) => {
+    const [activeTab, setActiveTab] = useState('Profile');
+
+    const renderContent = () => {
+        switch(activeTab) {
+            case 'Profile':
+                return <ProfileSettings currentUser={currentUser} onUpdateUser={onUpdateUser} />;
+            case 'KYC':
+                return <InvestorKycSettings status={currentUser.kycStatus} />;
+            case '2FA':
+                return <TwoFactorAuthSettings enabled={currentUser.twoFactorEnabled} />;
+            default:
+                return <ProfileSettings currentUser={currentUser} onUpdateUser={onUpdateUser} />;
+        }
+    }
 
     return (
         <div className="bg-white p-6 rounded-lg shadow-md max-w-4xl mx-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Settings</h2>
             <div className="mb-6 border-b border-gray-200">
                 <nav className="-mb-px flex flex-wrap space-x-2 sm:space-x-6" aria-label="Tabs">
+                    <button
+                        onClick={() => setActiveTab('Profile')}
+                        className={`${activeTab === 'Profile' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
+                    >
+                        Profile
+                    </button>
                     <button
                         onClick={() => setActiveTab('KYC')}
                         className={`${activeTab === 'KYC' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} py-4 px-2 sm:px-4 border-b-2 font-medium text-sm`}
@@ -2195,7 +2502,7 @@ const InvestorSettings = ({ currentUser }) => {
                     </button>
                 </nav>
             </div>
-            {activeTab === 'KYC' ? <InvestorKycSettings status={currentUser.kycStatus} /> : <TwoFactorAuthSettings enabled={currentUser.twoFactorEnabled} />}
+            {renderContent()}
         </div>
     );
 };
@@ -2325,8 +2632,8 @@ const CryptoWallet = ({ wallet }) => {
         const numericAmount = parseFloat(withdrawalDetails.amount);
         const balance = modalConfig.currency === 'USDT' ? wallet.usdt : wallet.usdc;
 
-        if (!withdrawalDetails.address.startsWith('T') || withdrawalDetails.address.length < 26) {
-            setWithdrawalError('Please enter a valid TRC20 address.');
+        if (!withdrawalDetails.address.startsWith('0x') || withdrawalDetails.address.length !== 42) {
+            setWithdrawalError('Please enter a valid Base address (0x...).');
             return;
         }
         if (isNaN(numericAmount) || numericAmount <= 0) {
@@ -2446,10 +2753,10 @@ const CryptoWallet = ({ wallet }) => {
             <WalletModal isOpen={modalConfig.isOpen} onClose={closeModal} title={`${modalConfig.action} ${modalConfig.currency}`}>
                 {modalConfig.action === 'Deposit' && (
                     <div>
-                        <p className="text-sm text-center text-gray-600 mb-4">Send {modalConfig.currency} to this address. Only send {modalConfig.currency} on the TRC20 network.</p>
+                        <p className="text-sm text-center text-gray-600 mb-4">Send {modalConfig.currency} to this address. Only send {modalConfig.currency} on the Base network.</p>
                         <div className="bg-gray-100 p-3 rounded-md text-center">
                             <p className="text-xs text-gray-500 mb-1">Your {modalConfig.currency} Deposit Address</p>
-                            <p className="font-mono break-all">TAbcdeFGHIjklmnoPQRSTuvwxyz12345</p>
+                            <p className="font-mono break-all">0x1234AbCdEfGhIjKlMnOpQrStUvWxYz5678</p>
                         </div>
                         <button className="mt-4 w-full flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
                            <ClipboardIcon className="w-4 h-4 mr-2"/> Copy Address
@@ -2557,20 +2864,19 @@ const FiatWallet = ({ wallet }) => {
             default:
                 return (
                     <form className="space-y-4" onSubmit={handleWithdrawalRequest}>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Bank Name</label>
-                            <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3">
-                                <option>GTBank</option>
-                                <option>Zenith Bank</option>
-                                <option>Access Bank</option>
-                            </select>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">{modalConfig.currency} Address</label>
+                            <input 
+                                type="text" 
+                                name="address"
+                                value={withdrawalDetails.address}
+                                onChange={handleWithdrawalChange}
+                                placeholder="Enter recipient Base address (0x...)" 
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Account Number</label>
-                            <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
-                        </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Amount (NGN)</label>
+                            <label className="block text-sm font-medium text-gray-700">Amount</label>
                             <input 
                                 type="text" 
                                 placeholder="0" 
@@ -3811,11 +4117,13 @@ const CompanyProfileSettings = ({ profile }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Company Name</label>
-                        <input type="text" name="name" value={companyProfile.name} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        <input type="text" name="name" value={companyProfile.name} readOnly className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"/>
+                        <p className="mt-1 text-xs text-gray-500">Company name cannot be changed after registration.</p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Registration Number</label>
-                        <input type="text" name="regNumber" value={companyProfile.regNumber} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"/>
+                        <input type="text" name="regNumber" value={companyProfile.regNumber} readOnly className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"/>
+                        <p className="mt-1 text-xs text-gray-500">Registration number cannot be changed.</p>
                     </div>
                 </div>
                 <div>
@@ -5627,7 +5935,7 @@ export default function App() {
         if (currentUser) {
             const activities = userActivities[currentUser.id] || [];
             switch (currentUser.type) {
-                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} activities={activities} onExchange={handleCurrencyExchange} />;
+                case 'investor': return <InvestorDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} onClaimApy={handleClaimApy} onListToken={handleListToken} onInvest={handleInvest} onRedeemPrincipal={handleRedeemPrincipal} totalBalance={totalBalance} activities={activities} onExchange={handleCurrencyExchange} onUpdateUser={handleUpdateUser} />;
                 case 'developer': return <DeveloperDashboard currentUser={currentUser} projects={projects} portfolios={portfolios} marketListings={marketListings} onLogout={handleLogout} totalBalance={totalBalance} activities={activities} onCreateProject={handleCreateProject} onWithdrawFunds={handleWithdrawFunds} onDepositApyFunds={handleDepositApyFunds} />;
                 case 'admin': return <AdminDashboard currentUser={currentUser} projects={projects} users={users} onLogout={handleLogout} totalBalance={totalBalance} onUpdateProjectStatus={handleUpdateProjectStatus} onUpdateUser={handleUpdateUser} />;
                 default:
@@ -5662,6 +5970,14 @@ export default function App() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
 
 
 
